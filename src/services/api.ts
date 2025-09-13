@@ -61,63 +61,48 @@ export class ApiService {
   }
 
   static async getCompetitions(): Promise<Competition[]> {
-    console.log('API lekérés kezdése...');
-    
     // Ha van érvényes cache, használjuk azt
     if (this.isCacheValid()) {
       const cached = this.getCache();
       if (cached) {
-        console.log('Cache-ből betöltve:', cached.length, 'verseny');
         return cached;
       }
     }
 
-    console.log('Online állapot:', this.isOnline());
-
     // Ha online vagyunk, próbáljuk letölteni
     if (this.isOnline()) {
       try {
-        console.log('API lekérés:', API_URL);
         const response = await fetch(API_URL, {
           cache: 'no-cache',
           headers: {
             'Cache-Control': 'no-cache'
           }
         });
-        console.log('Response status:', response.status);
         
         if (response.ok) {
           let text = await response.text();
-          console.log('Raw response:', text.substring(0, 200) + '...');
           
           // Távolítsuk el az összes HTML tag-ot
           if (text.includes('<')) {
-            console.warn('Response tartalmaz HTML tag-okat, eltávolítjuk...');
             text = text.replace(/<[^>]*>/g, '');
-            console.log('Tisztított response:', text.substring(0, 200) + '...');
           }
           
           const data = JSON.parse(text);
-          console.log('Letöltött adatok:', data.length, 'verseny');
           this.setCache(data);
           return data;
-        } else {
-          console.error('API hiba, status:', response.status);
         }
       } catch (error) {
-        console.error('Fetch hiba:', error);
+        // Csendes hiba kezelés
       }
     }
 
     // Ha nem sikerült, használjuk a cache-t (ha van)
     const cached = this.getCache();
     if (cached) {
-      console.log('Fallback cache:', cached.length, 'verseny');
       return cached;
     }
 
     // Ha nincs semmi, alapértelmezett adatokat adunk vissza
-    console.log('Nincs adat, alapértelmezett versenyek visszaadása');
     return DEFAULT_COMPETITIONS;
   }
 

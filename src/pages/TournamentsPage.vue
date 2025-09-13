@@ -64,21 +64,15 @@ const filteredCompetitions = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  console.log('Mai dátum:', today);
-  console.log('Összes verseny:', competitions.value.length);
-  
   const filtered = competitions.value.filter(comp => {
     // Parse the date string (format: 2025.09.13)
     const [year, month, day] = comp.event_date.split('.');
     const compDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     compDate.setHours(0, 0, 0, 0);
     
-    const isFuture = compDate >= today;
-    console.log('Verseny dátuma:', comp.event_date, '->', compDate, '>=', today, '?', isFuture);
-    return isFuture;
+    return compDate >= today;
   });
   
-  console.log('Szűrt versenyek:', filtered.length);
   return filtered;
 });
 
