@@ -1,15 +1,5 @@
 <template>
   <div>
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h1 class="h5 mb-0 text-white">Versenyek</h1>
-      <button 
-        class="btn btn-sm btn-outline-light" 
-        @click="clearCacheAndReload"
-        title="Cache törlése és újratöltés"
-      >
-        🔄
-      </button>
-    </div>
     
     <LoadingSpinner v-if="loading" />
     
