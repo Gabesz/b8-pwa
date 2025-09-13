@@ -7,23 +7,10 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'robots.txt', 'apple-touch-icon.png'],
-      manifest: {
-        name: 'Vue PWA Skeleton',
-        short_name: 'VuePWA',
-        description: 'Alap Vue 3 + Vite PWA vázprojekt',
-        theme_color: '#0ea5e9',
-        background_color: '#ffffff',
-        display: 'standalone',
-        scope: '/',
-        start_url: '/',
-        lang: 'hu',
-        icons: [
-          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'pwa-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
-        ]
-      }
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+      },
+      includeAssets: ['favicon.svg', 'robots.txt', 'apple-touch-icon.png', 'manifest.webmanifest']
     })
   ],
   server: {
