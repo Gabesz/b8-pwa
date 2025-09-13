@@ -8,6 +8,31 @@ export interface Competition {
   place: string;
 }
 
+// Alapértelmezett adatok - ha nincs cache és nem sikerül online lekérés
+const DEFAULT_COMPETITIONS: Competition[] = [
+  {
+    event_date: "2025.09.13",
+    name: "Club 68 Start - Amatőr Biliárd Verseny - 2025",
+    type: "8-Ball",
+    link: "https://cuescore.com/tournament/Club+68+Start+-+Amat%C5%91r+Bili%C3%A1rd+Verseny+-+2025/64420795",
+    place: "Club 68 - Pécs"
+  },
+  {
+    event_date: "2025.09.14",
+    name: "V. FEBSE \"C\" Ligás (Amatőr) Bajnokság 7. Forduló",
+    type: "9-Ball",
+    link: "https://cuescore.com/tournament/V.+FEBSE+%22C%22+Lig%C3%A1s+%28Amat%C5%91r%29+Bajnoks%C3%A1g+7.+Fordul%C3%B3/52949362",
+    place: "Tájfun Biliárdszalon"
+  },
+  {
+    event_date: "2025.09.14",
+    name: "XIX. SZEGED GRAND PRIX 8. forduló",
+    type: "10-Ball",
+    link: "https://cuescore.com/tournament/XIX.+SZEGED+GRAND+PRIX+8.+fordul%C3%B3/53241964",
+    place: "Vegas Biliárd Pub"
+  }
+];
+
 const API_URL = '/api/competition_groups';
 const CACHE_KEY = 'competitions_cache_v2';
 const CACHE_DATE_KEY = 'competitions_cache_date_v2';
@@ -91,8 +116,9 @@ export class ApiService {
       return cached;
     }
 
-    console.log('Nincs adat, üres tömb visszaadása');
-    return [];
+    // Ha nincs semmi, alapértelmezett adatokat adunk vissza
+    console.log('Nincs adat, alapértelmezett versenyek visszaadása');
+    return DEFAULT_COMPETITIONS;
   }
 
   // Cache törlés függvény
