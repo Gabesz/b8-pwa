@@ -1,16 +1,40 @@
 <template>
   <div class="homepage-container">
-    <!-- Vízszintes menü sáv -->
+    <!-- 1 soros navigáció - fix gomb + scrollozható gombok -->
     <div 
-      class="horizontal-menu"
+      class="single-row-navigation"
       :class="{ 'animate-in': showMenu }"
     >
-      <a href="#" class="menu-item">Játékos ranglista</a>
-      <a href="#" class="menu-item">CueScore.hu</a>
-      <a href="#" class="menu-item">Biliard8.hu</a>
-      <a href="#" class="menu-item">CsB</a>
-      <a href="#" class="menu-item">Verseny naptár</a>
-      <a href="#" class="menu-item">LIVE stream-ek</a>
+      <!-- Fix gomb balra -->
+      <a href="#" class="menu-item fixed-item">Játékos ranglista</a>
+      
+      <!-- Scrollozható gombok jobbra -->
+      <div 
+        class="scrollable-row"
+        ref="scrollableRow"
+        @mousedown="startDrag"
+        @mousemove="drag"
+        @mouseup="endDrag"
+        @mouseleave="endDrag"
+        @touchstart="startDrag"
+        @touchmove="drag"
+        @touchend="endDrag"
+      >
+        <div 
+          class="scrollable-content"
+          ref="scrollableContent"
+          :style="{ transform: `translateX(${scrollOffset}px)` }"
+        >
+          <a href="#" class="menu-item">CueScore.hu</a>
+          <a href="#" class="menu-item">Biliard8.hu</a>
+          <a href="#" class="menu-item">CsB</a>
+          <a href="#" class="menu-item">Verseny naptár</a>
+          <a href="#" class="menu-item">LIVE stream-ek</a>
+          <a href="#" class="menu-item">Eredmények</a>
+          <a href="#" class="menu-item">Statisztikák</a>
+          <a href="#" class="menu-item">Hírek</a>
+        </div>
+      </div>
     </div>
 
     <div 
@@ -61,12 +85,54 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 
 const showMenu = ref(false)
 const showProfi = ref(false)
 const showFelprofi = ref(false)
 const showAmator = ref(false)
+
+// Drag & drop változók
+const scrollOffset = ref(0)
+const isDragging = ref(false)
+const startX = ref(0)
+const startScrollOffset = ref(0)
+const scrollableRow = ref<HTMLElement>()
+const scrollableContent = ref<HTMLElement>()
+
+const startDrag = (e: MouseEvent | TouchEvent) => {
+  isDragging.value = true
+  const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+  startX.value = clientX
+  startScrollOffset.value = scrollOffset.value
+  
+  // Prevencija a default viselkedés ellen
+  e.preventDefault()
+}
+
+const drag = (e: MouseEvent | TouchEvent) => {
+  if (!isDragging.value) return
+  
+  const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+  const deltaX = clientX - startX.value
+  const newOffset = startScrollOffset.value + deltaX
+  
+  // Számítsuk ki a scrollozható terület szélességét
+  if (scrollableRow.value && scrollableContent.value) {
+    const containerWidth = scrollableRow.value.offsetWidth
+    const contentWidth = scrollableContent.value.scrollWidth
+    const maxScroll = Math.max(0, contentWidth - containerWidth)
+    
+    // Korlátozzuk a scrollozást
+    scrollOffset.value = Math.max(-maxScroll, Math.min(0, newOffset))
+  }
+  
+  e.preventDefault()
+}
+
+const endDrag = () => {
+  isDragging.value = false
+}
 
 onMounted(() => {
   // Menü sáv azonnal indul
@@ -74,20 +140,20 @@ onMounted(() => {
     showMenu.value = true
   }, 100)
   
-  // PROFI doboz 500ms után (amikor a menü félig beért)
+  // PROFI doboz 175ms után
   setTimeout(() => {
     showProfi.value = true
-  }, 600)
+  }, 175)
   
-  // FÉLPROFI doboz 900ms után (amikor a PROFI félig beért)
+  // FÉLPROFI doboz 250ms után
   setTimeout(() => {
     showFelprofi.value = true
-  }, 1000)
+  }, 250)
   
-  // AMATŐR doboz 1200ms után (amikor a FÉLPROFI félig beért)
+  // AMATŐR doboz 325ms után
   setTimeout(() => {
     showAmator.value = true
-  }, 1300)
+  }, 325)
 })
 </script>
 
@@ -100,9 +166,9 @@ onMounted(() => {
   overflow-x: hidden;
 }
 
-.horizontal-menu {
+.single-row-navigation {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 12px;
   margin-bottom: 8px;
   transform: translateX(100%);
@@ -110,10 +176,31 @@ onMounted(() => {
   transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-.horizontal-menu.animate-in {
+.single-row-navigation.animate-in {
   transform: translateX(-20px);
   opacity: 1;
   animation: bounceBack 0.3s ease-out 0.8s forwards;
+}
+
+.scrollable-row {
+  flex: 1;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.scrollable-row:active {
+  cursor: grabbing;
+}
+
+.scrollable-content {
+  display: flex;
+  gap: 12px;
+  transition: transform 0.1s ease-out;
+  will-change: transform;
 }
 
 .menu-item {
@@ -124,24 +211,18 @@ onMounted(() => {
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.2s ease;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.menu-item:hover {
+.menu-item.fixed-item {
   background-color: #bb5175;
   color: white;
-  transform: translateY(-2px);
+  transition: background-color 0.2s ease;
 }
 
-.menu-item:first-child {
-  background-color: #bb5175;
-  color: white;
-}
-
-.menu-item:first-child:hover {
+.menu-item.fixed-item:hover {
   background-color: #a0445f;
-  transform: translateY(-2px);
 }
 
 .skill-level-box {
@@ -153,7 +234,8 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transform: translateX(100%);
   opacity: 0;
-  transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55), 
+              opacity 0.6s ease-out 0.2s;
 }
 
 .skill-level-box.animate-in {
@@ -227,9 +309,13 @@ onMounted(() => {
     gap: 12px;
   }
   
-  .horizontal-menu {
+  .single-row-navigation {
     gap: 8px;
     margin-bottom: 6px;
+  }
+  
+  .scrollable-content {
+    gap: 8px;
   }
   
   .menu-item {
@@ -253,7 +339,6 @@ onMounted(() => {
   .star-icon {
     font-size: 40px;
   }
-  
 }
 </style>
 

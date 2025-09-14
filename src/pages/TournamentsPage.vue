@@ -8,6 +8,7 @@
         v-for="(competition, index) in filteredCompetitions" 
         :key="competition.event_date + competition.name"
         class="competition-card"
+        :class="{ 'animate-in': animatedCards[index] }"
       >
         <div class="competition-date">
           {{ formatDate(competition.event_date) }}
@@ -45,13 +46,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { ApiService, type Competition } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 
 const competitions = ref<Competition[]>([]);
 const loading = ref(true);
 const expandedIndex = ref(0); // Első elem alapból nyitva
+const animatedCards = ref<boolean[]>([]);
 
 function formatDate(dateStr: string): string {
   // Convert from 2025.09.13 to 2025. 09. 13.
@@ -84,6 +86,26 @@ function toggleDetails(index: number): void {
   }
 }
 
+// Animáció logika
+function animateCards() {
+  const filtered = filteredCompetitions.value;
+  animatedCards.value = new Array(filtered.length).fill(false);
+  
+  // Animáljuk a kártyákat egymás után
+  filtered.forEach((_, index) => {
+    setTimeout(() => {
+      animatedCards.value[index] = true;
+    }, 100 + (index * 75)); // 100ms kezdeti késleltetés, majd 75ms közöttük
+  });
+}
+
+// Watch a filtered competitions változására
+watch(filteredCompetitions, () => {
+  if (filteredCompetitions.value.length > 0) {
+    animateCards();
+  }
+}, { immediate: true });
+
 async function loadCompetitions() {
   loading.value = true;
   try {
@@ -106,6 +128,7 @@ onMounted(loadCompetitions);
 <style scoped>
 .competitions-list {
   padding: 0 16px;
+  overflow-x: hidden;
 }
 
 .competition-card {
@@ -117,6 +140,28 @@ onMounted(loadCompetitions);
   align-items: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   min-height: 80px;
+  transform: translateX(100%);
+  opacity: 0;
+  transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55), 
+              opacity 0.6s ease-out 0.2s;
+}
+
+.competition-card.animate-in {
+  transform: translateX(-20px);
+  opacity: 1;
+  animation: bounceBack 0.3s ease-out 0.8s forwards;
+}
+
+@keyframes bounceBack {
+  0% {
+    transform: translateX(-20px);
+  }
+  50% {
+    transform: translateX(10px);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
 .competition-date {
