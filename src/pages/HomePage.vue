@@ -1,5 +1,7 @@
 <template>
   <div class="homepage-container">
+    <!-- Preloader -->
+    <CircularPreloader :show="isLoadingPlayers" text="Játékosok betöltése..." />
     <!-- 1 soros navigáció - fix gomb + scrollozható gombok -->
     <div 
       class="single-row-navigation"
@@ -25,10 +27,10 @@
           ref="scrollableContent"
           :style="{ transform: `translateX(${scrollOffset}px)` }"
         >
-          <a href="#" class="menu-item">CueScore.hu</a>
-          <a href="#" class="menu-item">Biliard8.hu</a>
-          <a href="#" class="menu-item">CsB</a>
-          <a href="#" class="menu-item">Verseny naptár</a>
+          <a href="https://cuescore.com/" target="_blank" class="menu-item">CueScore.com</a>
+          <a href="https://biliard8.hu/" target="_blank" class="menu-item">Biliard8.hu</a>
+          <a href="https://poolszakag.hu/group" target="_blank" class="menu-item">CsB</a>
+          <a href="https://poolszakag.hu/fixture" target="_blank" class="menu-item">Verseny naptár</a>
           <a href="#" class="menu-item">LIVE stream-ek</a>
           <a href="#" class="menu-item">Eredmények</a>
           <a href="#" class="menu-item">Statisztikák</a>
@@ -47,7 +49,7 @@
         </div>
         <div class="box-text">
           <div class="box-title">PROFI</div>
-          <div class="box-subtitle">ranglista (66)</div>
+          <div class="box-subtitle">ranglista ({{ profiCount }})</div>
         </div>
       </div>
     </div>
@@ -62,7 +64,7 @@
         </div>
         <div class="box-text">
           <div class="box-title">FÉLPROFI</div>
-          <div class="box-subtitle">ranglista (153)</div>
+          <div class="box-subtitle">ranglista ({{ felprofiCount }})</div>
         </div>
       </div>
     </div>
@@ -77,20 +79,31 @@
         </div>
         <div class="box-text">
           <div class="box-title">AMATŐR</div>
-          <div class="box-subtitle">ranglista (967)</div>
+          <div class="box-subtitle">ranglista ({{ amatorCount }})</div>
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
+import { ApiService, type Player } from '../services/api'
+import CircularPreloader from '../components/CircularPreloader.vue'
 
 const showMenu = ref(false)
 const showProfi = ref(false)
 const showFelprofi = ref(false)
 const showAmator = ref(false)
+
+// Játékosok számlálása
+const profiCount = ref(66)
+const felprofiCount = ref(153)
+const amatorCount = ref(967)
+
+// Loading state
+const isLoadingPlayers = ref(false)
 
 // Drag & drop változók
 const scrollOffset = ref(0)
@@ -134,7 +147,32 @@ const endDrag = () => {
   isDragging.value = false
 }
 
-onMounted(() => {
+// Játékosok adatainak lekérése
+const loadPlayerData = async () => {
+  isLoadingPlayers.value = true
+  
+  try {
+    // Teszt késleltetés - hogy látszódjon a preloader
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    const playersResponse = await ApiService.getPlayers()
+    const counts = ApiService.getPlayerCountsByLevel(playersResponse.data)
+    
+    profiCount.value = counts.profi
+    felprofiCount.value = counts.felprofi
+    amatorCount.value = counts.amator
+  } catch (error) {
+    // Ha hiba van, az alapértelmezett értékek maradnak
+    console.log('Nem sikerült betölteni a játékos adatokat')
+  } finally {
+    isLoadingPlayers.value = false
+    // Preloader eltűnése után indítsuk az animációkat
+    startAnimations()
+  }
+}
+
+// Animációk indítása
+const startAnimations = () => {
   // Menü sáv azonnal indul
   setTimeout(() => {
     showMenu.value = true
@@ -154,6 +192,11 @@ onMounted(() => {
   setTimeout(() => {
     showAmator.value = true
   }, 325)
+}
+
+onMounted(() => {
+  // Játékos adatok betöltése
+  loadPlayerData()
 })
 </script>
 

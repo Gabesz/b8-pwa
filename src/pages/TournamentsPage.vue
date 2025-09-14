@@ -1,9 +1,9 @@
 <template>
   <div>
+    <!-- Preloader -->
+    <CircularPreloader :show="loading" text="Versenyek betöltése..." />
     
-    <LoadingSpinner v-if="loading" />
-    
-    <div v-else-if="filteredCompetitions.length > 0" class="competitions-list">
+    <div v-if="!loading && filteredCompetitions.length > 0" class="competitions-list">
       <div 
         v-for="(competition, index) in filteredCompetitions" 
         :key="competition.event_date + competition.name"
@@ -39,7 +39,7 @@
       </div>
     </div>
     
-    <div v-else class="text-center text-white">
+    <div v-if="!loading && filteredCompetitions.length === 0" class="text-center text-white">
       <p>Nincsenek elérhető versenyek.</p>
     </div>
   </div>
@@ -48,7 +48,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import { ApiService, type Competition } from '../services/api';
-import LoadingSpinner from '../components/LoadingSpinner.vue';
+import CircularPreloader from '../components/CircularPreloader.vue';
 
 const competitions = ref<Competition[]>([]);
 const loading = ref(true);
@@ -99,9 +99,9 @@ function animateCards() {
   });
 }
 
-// Watch a filtered competitions változására
+// Watch a filtered competitions változására - csak ha nincs loading
 watch(filteredCompetitions, () => {
-  if (filteredCompetitions.value.length > 0) {
+  if (filteredCompetitions.value.length > 0 && !loading.value) {
     animateCards();
   }
 }, { immediate: true });
@@ -109,11 +109,18 @@ watch(filteredCompetitions, () => {
 async function loadCompetitions() {
   loading.value = true;
   try {
+    // Teszt késleltetés - hogy látszódjon a preloader
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
     competitions.value = await ApiService.getCompetitions();
   } catch (error) {
     console.error('Hiba a versenyek betöltésekor:', error);
   } finally {
     loading.value = false;
+    // Preloader eltűnése után indítsuk az animációkat
+    if (filteredCompetitions.value.length > 0) {
+      animateCards();
+    }
   }
 }
 

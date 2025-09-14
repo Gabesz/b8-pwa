@@ -21,6 +21,11 @@ export default defineConfig({
         target: 'https://vps.elisnails.hu',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/pool/public/b8')
+      },
+      '/players-api': {
+        target: 'https://vps.elisnails.hu',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/players-api/, '/pool/b8')
       }
     }
   }
