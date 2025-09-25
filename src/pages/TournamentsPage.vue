@@ -1,9 +1,6 @@
 <template>
   <div>
-    <!-- Preloader -->
-    <CircularPreloader :show="loading" text="Versenyek betöltése..." />
-    
-    <div v-if="!loading && filteredCompetitions.length > 0" class="competitions-list">
+    <div v-if="filteredCompetitions.length > 0" class="competitions-list">
       <div 
         v-for="(competition, index) in filteredCompetitions" 
         :key="competition.event_date + competition.name"
@@ -39,7 +36,7 @@
       </div>
     </div>
     
-    <div v-if="!loading && filteredCompetitions.length === 0" class="text-center text-white">
+    <div v-if="filteredCompetitions.length === 0" class="text-center text-white">
       <p>Nincsenek elérhető versenyek.</p>
     </div>
   </div>
@@ -48,10 +45,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import { ApiService, type Competition } from '../services/api';
-import CircularPreloader from '../components/CircularPreloader.vue';
 
 const competitions = ref<Competition[]>([]);
-const loading = ref(true);
 const expandedIndex = ref(0); // Első elem alapból nyitva
 const animatedCards = ref<boolean[]>([]);
 
@@ -61,20 +56,15 @@ function formatDate(dateStr: string): string {
   return `${year}. ${month}. ${day}.`;
 }
 
-// Szűrjük a versenyeket - csak a mai dátummal vagy későbbiek
+// Ideiglenesen minden versenyt mutatunk (dátum szűrés nélkül)
 const filteredCompetitions = computed(() => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  console.log('Versenyek szűrése...');
+  console.log('Összes verseny:', competitions.value.length);
   
-  const filtered = competitions.value.filter(comp => {
-    // Parse the date string (format: 2025.09.13)
-    const [year, month, day] = comp.event_date.split('.');
-    const compDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    compDate.setHours(0, 0, 0, 0);
-    
-    return compDate >= today;
-  });
+  // Ideiglenesen minden versenyt mutatunk
+  const filtered = competitions.value;
   
+  console.log('Szűrt versenyek:', filtered.length);
   return filtered;
 });
 
@@ -99,42 +89,50 @@ function animateCards() {
   });
 }
 
-// Watch a filtered competitions változására - csak ha nincs loading
+// Watch a filtered competitions változására
 watch(filteredCompetitions, () => {
-  if (filteredCompetitions.value.length > 0 && !loading.value) {
+  if (filteredCompetitions.value.length > 0) {
     animateCards();
   }
 }, { immediate: true });
 
 async function loadCompetitions() {
-  loading.value = true;
   try {
-    // Teszt késleltetés - hogy látszódjon a preloader
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
+    console.log('Versenyek betöltése...');
     competitions.value = await ApiService.getCompetitions();
-  } catch (error) {
-    console.error('Hiba a versenyek betöltésekor:', error);
-  } finally {
-    loading.value = false;
-    // Preloader eltűnése után indítsuk az animációkat
+    console.log('Versenyek betöltve:', competitions.value.length);
+    
+    // Animációk indítása az adatok betöltése után
     if (filteredCompetitions.value.length > 0) {
       animateCards();
     }
+  } catch (error) {
+    console.error('Hiba a versenyek betöltésekor:', error);
   }
 }
 
 async function clearCacheAndReload() {
-  ApiService.clearCache();
+  await ApiService.clearCache();
   await loadCompetitions();
 }
 
-onMounted(loadCompetitions);
+onMounted(() => {
+  loadCompetitions();
+  // Háttér szinkronizáció ellenőrzése
+  ApiService.checkAndSyncIfNeeded();
+  
+  // Debug: cache törlés gomb hozzáadása a konzolhoz (csak fejlesztéshez)
+  if (import.meta.env.DEV) {
+    ;(window as any).clearTournamentsCacheAndReload = clearCacheAndReload;
+    console.log('Debug: Futtassa a clearTournamentsCacheAndReload() függvényt a konzolban a versenyek cache törléséhez');
+  }
+});
+
 </script>
 
 <style scoped>
 .competitions-list {
-  padding: 0 16px;
+  padding: 0 16px 80px 16px; /* 80px bottom padding a lábléc miatt */
   overflow-x: hidden;
 }
 
@@ -147,7 +145,7 @@ onMounted(loadCompetitions);
   align-items: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   min-height: 80px;
-  transform: translateX(100%);
+  transform: translateX(100vw);
   opacity: 0;
   transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55), 
               opacity 0.6s ease-out 0.2s;

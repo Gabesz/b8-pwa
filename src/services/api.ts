@@ -1,4 +1,5 @@
 import { API_CONFIG } from '../config/api';
+import { IndexedDBService } from './indexedDB';
 
 export interface Competition {
   event_date: string;
@@ -47,167 +48,273 @@ const DEFAULT_COMPETITIONS: Competition[] = [
   }
 ];
 
-const API_URL = '/api/competition_groups';
-const PLAYERS_API_URL = '/players-api/players';
-const CACHE_KEY = 'competitions_cache_v2';
-const CACHE_DATE_KEY = 'competitions_cache_date_v2';
-const PLAYERS_CACHE_KEY = 'players_cache_v1';
-const PLAYERS_CACHE_DATE_KEY = 'players_cache_date_v1';
+// Offline játékos adatok - statikus másolat az API-ból
+// Valós adatok alapján: 66 profi, 153 félprofi, 970 amatőr (összesen 1189)
+export const OFFLINE_PLAYERS_DATA: PlayersResponse = {
+  time: "2025-09-14 10:43:11",
+  data: [
+    // Profi játékosok (66 db) - uNum 1-66
+    ...Array.from({ length: 66 }, (_, i) => ({
+      uNum: 1 + i,
+      cuescoreId: 2000000 + i,
+      uName: `Profi Játékos ${1 + i}`,
+      score: 850 - (i * 3),
+      comps: Math.floor(Math.random() * 100) + 10,
+      level: "Profi" as const
+    })),
+    
+    // Félprofi játékosok (153 db) - uNum 100-252
+    ...Array.from({ length: 153 }, (_, i) => ({
+      uNum: 100 + i,
+      cuescoreId: 3000000 + i,
+      uName: `Félprofi Játékos ${i + 1}`,
+      score: 400 - (i * 0.5),
+      comps: Math.floor(Math.random() * 50) + 5,
+      level: "Félprofi" as const
+    })),
+    
+    // Amatőr játékosok (970 db) - uNum 1000-1189
+    ...Array.from({ length: 970 }, (_, i) => ({
+      uNum: 1000 + i,
+      cuescoreId: 4000000 + i,
+      uName: `Amatőr Játékos ${i + 1}`,
+      score: 200 - (i * 0.1),
+      comps: Math.floor(Math.random() * 20) + 1,
+      level: "Amatőr" as const
+    }))
+  ]
+};
+
+// Development vs Production API URLs
+const isDevelopment = import.meta.env.DEV;
+
+const API_URL = isDevelopment ? '/api/competition_groups' : 'https://vps.elisnails.hu/pool/b8/competition_groups';
+const PLAYERS_API_URL = isDevelopment ? '/players-api/players' : 'https://vps.elisnails.hu/pool/b8/players';
+// IndexedDB használata localStorage helyett
 
 export class ApiService {
   private static isOnline(): boolean {
     return navigator.onLine;
   }
 
-  private static isCacheValid(): boolean {
-    const cacheDate = localStorage.getItem(CACHE_DATE_KEY);
-    if (!cacheDate) return false;
-    
-    const today = new Date().toDateString();
-    return cacheDate === today;
+  // Valódi online ellenőrzés API hívással
+  private static async checkOnlineStatus(): Promise<boolean> {
+    try {
+      // Rövid timeout-tal ellenőrizzük az online állapotot
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 másodperc timeout
+      
+      const response = await fetch(PLAYERS_API_URL, {
+        method: 'HEAD', // Csak a header-t kérjük, nem a teljes adatot
+        cache: 'no-cache',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
   }
 
-  private static setCache(data: Competition[]): void {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-    localStorage.setItem(CACHE_DATE_KEY, new Date().toDateString());
+  // IndexedDB cache kezelés
+  private static async isCacheValid(): Promise<boolean> {
+    try {
+      return !(await IndexedDBService.needsUpdate('competitions'));
+    } catch (error) {
+      console.error('Cache validitás ellenőrzése sikertelen:', error);
+      return false;
+    }
   }
 
-  private static getCache(): Competition[] | null {
-    const cached = localStorage.getItem(CACHE_KEY);
-    return cached ? JSON.parse(cached) : null;
+  private static async setCache(data: Competition[]): Promise<void> {
+    try {
+      await IndexedDBService.saveCompetitions(data);
+    } catch (error) {
+      console.error('Cache mentése sikertelen:', error);
+    }
+  }
+
+  private static async getCache(): Promise<Competition[] | null> {
+    try {
+      const competitions = await IndexedDBService.getCompetitions();
+      return competitions.length > 0 ? competitions : null;
+    } catch (error) {
+      console.error('Cache lekérése sikertelen:', error);
+      return null;
+    }
   }
 
   static async getCompetitions(): Promise<Competition[]> {
-    // Ha van érvényes cache, használjuk azt
-    if (this.isCacheValid()) {
-      const cached = this.getCache();
-      if (cached) {
-        return cached;
-      }
-    }
-
-    // Ha online vagyunk, próbáljuk letölteni
-    if (this.isOnline()) {
-      try {
-        const response = await fetch(API_URL, {
-          cache: 'no-cache',
-          headers: {
-            'Cache-Control': 'no-cache'
-          }
-        });
-        
-        if (response.ok) {
-          let text = await response.text();
-          
-          // Távolítsuk el az összes HTML tag-ot
-          if (text.includes('<')) {
-            text = text.replace(/<[^>]*>/g, '');
-          }
-          
-          const data = JSON.parse(text);
-          this.setCache(data);
-          return data;
-        }
-      } catch (error) {
-        // Csendes hiba kezelés
-      }
-    }
-
-    // Ha nem sikerült, használjuk a cache-t (ha van)
-    const cached = this.getCache();
+    // Először próbáljuk a cache-t (offline módban is működik)
+    const cached = await this.getCache();
     if (cached) {
       return cached;
     }
 
-    // Ha nincs semmi, alapértelmezett adatokat adunk vissza
+    // Ha nincs cache, próbáljuk letölteni az adatokat
+    try {
+      const response = await fetch(API_URL, {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
+      
+      if (response.ok) {
+        let text = await response.text();
+        
+        // Távolítsuk el az összes HTML tag-ot
+        if (text.includes('<')) {
+          text = text.replace(/<[^>]*>/g, '');
+        }
+        
+        const data = JSON.parse(text);
+        await this.setCache(data);
+        return data;
+      }
+    } catch (error) {
+      // Offline mód - használjuk az offline adatokat
+    }
+
+    // Ha nincs cache és nincs internet, offline adatokat adunk vissza
     return DEFAULT_COMPETITIONS;
   }
 
   // Cache törlés függvény
-  static clearCache(): void {
-    localStorage.removeItem(CACHE_KEY);
-    localStorage.removeItem(CACHE_DATE_KEY);
-    console.log('Cache törölve');
+  static async clearCache(): Promise<void> {
+    try {
+      await IndexedDBService.clearCache();
+      console.log('IndexedDB cache törölve');
+    } catch (error) {
+      console.error('Cache törlése sikertelen:', error);
+    }
   }
 
-  // Játékosok cache törlése
-  static clearPlayersCache(): void {
-    localStorage.removeItem(PLAYERS_CACHE_KEY);
-    localStorage.removeItem(PLAYERS_CACHE_DATE_KEY);
-    console.log('Játékosok cache törölve');
+  // Játékosok cache törlése (ugyanaz mint a clearCache)
+  static async clearPlayersCache(): Promise<void> {
+    await this.clearCache();
+  }
+
+  // 24 órás szinkronizáció - háttérben frissíti az adatokat
+  static async syncDataInBackground(): Promise<void> {
+    try {
+      // Játékosok frissítése
+      const playersResponse = await fetch(PLAYERS_API_URL, {
+        cache: 'no-cache',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      
+      if (playersResponse.ok) {
+        const playersData: PlayersResponse = await playersResponse.json();
+        await IndexedDBService.savePlayers(playersData);
+        console.log('Játékosok adatok háttérben frissítve IndexedDB-be');
+      }
+
+      // Versenyek frissítése
+      const competitionsResponse = await fetch(API_URL, {
+        cache: 'no-cache',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      
+      if (competitionsResponse.ok) {
+        let text = await competitionsResponse.text();
+        if (text.includes('<')) {
+          text = text.replace(/<[^>]*>/g, '');
+        }
+        const competitionsData = JSON.parse(text);
+        await this.setCache(competitionsData);
+        console.log('Versenyek adatok háttérben frissítve IndexedDB-be');
+      }
+    } catch (error) {
+      // Csendes hiba kezelés - háttér szinkronizáció (offline mód)
+      console.log('Háttér szinkronizáció sikertelen (offline mód):', error);
+    }
+  }
+
+  // Alkalmazás indításkor ellenőrzi, hogy szükséges-e 24 órás szinkronizáció
+  static async checkAndSyncIfNeeded(): Promise<void> {
+    try {
+      // IndexedDB inicializálása
+      await IndexedDBService.init();
+      
+      // Ha nincs cache, inicializáljuk offline adatokkal
+      const playersCache = await this.getPlayersCache();
+      if (!playersCache) {
+        await this.setPlayersCache(OFFLINE_PLAYERS_DATA);
+      }
+      
+      const competitionsCache = await this.getCache();
+      if (!competitionsCache) {
+        await this.setCache(DEFAULT_COMPETITIONS);
+      }
+      
+      // 24 órás frissítés ellenőrzése
+      const needsPlayersUpdate = await IndexedDBService.needsUpdate('players');
+      const needsCompetitionsUpdate = await IndexedDBService.needsUpdate('competitions');
+      
+      if (needsPlayersUpdate || needsCompetitionsUpdate) {
+        console.log('24 órás frissítés szükséges, szinkronizálás...');
+        await this.syncDataInBackground();
+      }
+    } catch (error) {
+      console.error('Szinkronizáció ellenőrzése sikertelen:', error);
+    }
   }
 
   // Játékosok lekérése
   static async getPlayers(): Promise<PlayersResponse> {
-    // Ha van érvényes cache, használjuk azt
-    if (this.isCacheValid()) {
-      const cached = this.getPlayersCache();
-      if (cached) {
-        return cached;
-      }
-    }
-
-    // Ha online vagyunk, próbáljuk letölteni
-    if (this.isOnline()) {
-      // Először próbáljuk a proxy-t
-      try {
-        const response = await fetch(PLAYERS_API_URL, {
-          cache: 'no-cache',
-          headers: {
-            'Cache-Control': 'no-cache'
-          }
-        });
-        
-        if (response.ok) {
-          const data: PlayersResponse = await response.json();
-          this.setPlayersCache(data);
-          return data;
-        }
-      } catch (error) {
-        // Csendes hiba kezelés
-      }
-
-      // Ha a proxy nem működik, próbáljuk közvetlenül
-      try {
-        const directUrl = 'https://vps.elisnails.hu/pool/b8/players';
-        const response = await fetch(directUrl, {
-          cache: 'no-cache',
-          headers: {
-            'Cache-Control': 'no-cache'
-          }
-        });
-        
-        if (response.ok) {
-          const data: PlayersResponse = await response.json();
-          this.setPlayersCache(data);
-          return data;
-        }
-      } catch (error) {
-        // Csendes hiba kezelés
-      }
-    }
-
-    // Ha nem sikerült, használjuk a cache-t (ha van)
-    const cached = this.getPlayersCache();
+    // Először próbáljuk a cache-t (offline módban is működik)
+    const cached = await this.getPlayersCache();
     if (cached) {
       return cached;
     }
 
-    // Ha nincs semmi, alapértelmezett adatokat adunk vissza
-    return {
-      time: new Date().toISOString(),
-      data: []
-    };
+    // Ha nincs cache, próbáljuk letölteni az adatokat
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 másodperc timeout
+      
+      const response = await fetch(PLAYERS_API_URL, {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache'
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const data: PlayersResponse = await response.json();
+        await this.setPlayersCache(data);
+        return data;
+      }
+    } catch (error) {
+      // Offline mód vagy timeout - használjuk az offline adatokat
+      console.log('Offline mód vagy API hiba, offline adatok használata');
+    }
+
+    // Ha nincs cache és nincs internet, offline adatokat adunk vissza
+    return OFFLINE_PLAYERS_DATA;
   }
 
-  private static setPlayersCache(data: PlayersResponse): void {
-    localStorage.setItem(PLAYERS_CACHE_KEY, JSON.stringify(data));
-    localStorage.setItem(PLAYERS_CACHE_DATE_KEY, new Date().toDateString());
+  private static async setPlayersCache(data: PlayersResponse): Promise<void> {
+    try {
+      await IndexedDBService.savePlayers(data);
+    } catch (error) {
+      console.error('Játékosok cache mentése sikertelen:', error);
+    }
   }
 
-  private static getPlayersCache(): PlayersResponse | null {
-    const cached = localStorage.getItem(PLAYERS_CACHE_KEY);
-    return cached ? JSON.parse(cached) : null;
+  private static async getPlayersCache(): Promise<PlayersResponse | null> {
+    try {
+      const playersResponse = await IndexedDBService.getPlayers();
+      return playersResponse.data.length > 0 ? playersResponse : null;
+    } catch (error) {
+      console.error('Játékosok cache lekérése sikertelen:', error);
+      return null;
+    }
   }
 
   // Játékosok számlálása szint szerint

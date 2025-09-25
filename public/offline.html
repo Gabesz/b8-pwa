@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - B8 Pool App</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .container {
+            max-width: 400px;
+            padding: 40px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+        h1 {
+            margin: 0 0 16px 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        p {
+            margin: 0 0 24px 0;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+        .retry-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .retry-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">📱</div>
+        <h1>Offline mód</h1>
+        <p>Az alkalmazás offline módban működik. Az adatok a cache-ből töltődnek be.</p>
+        <a href="/" class="retry-btn">Vissza a főoldalra</a>
+    </div>
+    
+    <script>
+        // Automatikus újratöltés online állapotban
+        window.addEventListener('online', () => {
+            // Várjunk egy kicsit, hogy a service worker frissüljön
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1000);
+        });
+        
+        // Retry gomb
+        document.querySelector('.retry-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            // Próbáljuk meg újratölteni a főoldalt
+            window.location.href = '/';
+        });
+        
+        // Service worker ellenőrzés
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(registration => {
+                console.log('Service Worker ready:', registration);
+            });
+        }
+    </script>
+</body>
+</html>

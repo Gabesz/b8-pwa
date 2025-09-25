@@ -44,12 +44,19 @@
     </nav>
 
     <UpdatePrompt />
+    <OnlineStatus />
+    <OfflineFallback />
   </div>
 </template>
 
 <script setup lang="ts">
 import UpdatePrompt from './components/UpdatePrompt.vue';
+import OnlineStatus from './components/OnlineStatus.vue';
+import OfflineFallback from './components/OfflineFallback.vue';
 import { RouterLink } from 'vue-router';
+
+// Dev mode ellenőrzés
+const isDev = import.meta.env.DEV;
 
 function openInfo() {
   alert('Információ hamarosan...');

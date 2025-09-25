@@ -2,14 +2,34 @@
 <html lang="hu">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#bb5175" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="description" content="Biliard8.hu Pool Alkalmazás - Offline használatra kész" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="B8Pool" />
+    <meta name="msapplication-TileColor" content="#bb5175" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    
+    <!-- Icons -->
+    <link rel="icon" href="/b8app/favicon.svg" type="image/svg+xml" />
+    <link rel="shortcut icon" href="/b8app/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/b8app/pwa-192x192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/b8app/pwa-192x192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/b8app/pwa-512x512.png" />
+    
+    <!-- Manifest - automatikusan hozzáadja a Vite PWA plugin -->
+    
     <title>Biliard8.hu PWA</title>
   </head>
   <body>
+    <script>
+      // Azonnali redirect a Vue indítása előtt
+      if (window.location.pathname === '/b8app' && !window.location.hash) {
+        window.location.replace(window.location.href + '#/');
+      }
+    </script>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
