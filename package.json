@@ -1,6 +1,6 @@
 {
   "name": "vue-pwa-skeleton",
-  "version": "0.1.73",
+  "version": "0.1.76",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,7 +12,10 @@
     "@fortawesome/fontawesome-free": "^7.0.1",
     "@popperjs/core": "2.11.8",
     "bootstrap": "5.3.8",
+    "chart.js": "^4.5.0",
+    "chartjs-plugin-annotation": "^3.1.0",
     "vue": "^3.5.8",
+    "vue-chartjs": "^5.3.2",
     "vue-router": "4.5.1"
   },
   "devDependencies": {

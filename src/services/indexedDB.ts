@@ -1,4 +1,4 @@
-import { Competition, Player, PlayersResponse } from './api';
+import { Competition, Player, PlayersResponse, PlayerResult } from './api';
 
 const DB_NAME = 'B8PoolAppDB';
 const DB_VERSION = 1;
@@ -7,6 +7,7 @@ const DB_VERSION = 1;
 const STORES = {
   COMPETITIONS: 'competitions',
   PLAYERS: 'players',
+  PLAYER_RESULTS: 'player_results',
   METADATA: 'metadata'
 } as const;
 
@@ -51,6 +52,12 @@ export class IndexedDBService {
           const playersStore = db.createObjectStore(STORES.PLAYERS, { keyPath: 'id', autoIncrement: true });
           playersStore.createIndex('uNum', 'uNum', { unique: true });
           playersStore.createIndex('level', 'level', { unique: false });
+        }
+
+        // Player results store
+        if (!db.objectStoreNames.contains(STORES.PLAYER_RESULTS)) {
+          const playerResultsStore = db.createObjectStore(STORES.PLAYER_RESULTS, { keyPath: 'cuescoreId' });
+          playerResultsStore.createIndex('cuescoreId', 'cuescoreId', { unique: true });
         }
 
         // Metadata store (cache információk, utolsó frissítés stb.)
@@ -223,7 +230,7 @@ export class IndexedDBService {
   }
 
   // Utolsó frissítés ellenőrzése
-  static async getLastUpdateTime(dataType: 'competitions' | 'players'): Promise<Date | null> {
+  static async getLastUpdateTime(dataType: 'competitions' | 'players' | 'player_results'): Promise<Date | null> {
     if (!this.db) {
       await this.init();
     }
@@ -231,7 +238,9 @@ export class IndexedDBService {
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction([STORES.METADATA], 'readonly');
       const store = transaction.objectStore(STORES.METADATA);
-      const key = dataType === 'competitions' ? 'competitions_last_updated' : 'players_last_updated';
+      const key = dataType === 'competitions' ? 'competitions_last_updated' : 
+                  dataType === 'players' ? 'players_last_updated' : 
+                  'player_results_last_updated';
       const request = store.get(key);
 
       request.onsuccess = () => {
@@ -249,8 +258,8 @@ export class IndexedDBService {
     });
   }
 
-  // 24 órás frissítés szükségességének ellenőrzése
-  static async needsUpdate(dataType: 'competitions' | 'players'): Promise<boolean> {
+  // 12 órás frissítés szükségességének ellenőrzése
+  static async needsUpdate(dataType: 'competitions' | 'players' | 'player_results'): Promise<boolean> {
     const lastUpdate = await this.getLastUpdateTime(dataType);
     
     if (!lastUpdate) {
@@ -260,7 +269,105 @@ export class IndexedDBService {
     const now = new Date();
     const diffInHours = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60);
     
-    return diffInHours >= 24; // 24 óránként frissítünk
+    return diffInHours >= 12; // 12 óránként frissítünk
+  }
+
+  // Játékos eredmények mentése
+  static async savePlayerResults(cuescoreId: number, results: PlayerResult[]): Promise<void> {
+    if (!this.db) {
+      await this.init();
+    }
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction([STORES.PLAYER_RESULTS, STORES.METADATA], 'readwrite');
+      
+      const playerResultsStore = transaction.objectStore(STORES.PLAYER_RESULTS);
+      const metadataStore = transaction.objectStore(STORES.METADATA);
+      
+      // Eredmények mentése
+      const playerResultData = {
+        cuescoreId,
+        results,
+        lastUpdated: new Date().toISOString()
+      };
+      playerResultsStore.put(playerResultData);
+
+      // Metadata frissítése
+      const metadata: Metadata = {
+        key: `player_results_${cuescoreId}_last_updated`,
+        value: new Date().toISOString(),
+        lastUpdated: new Date().toISOString()
+      };
+      metadataStore.put(metadata);
+
+      transaction.oncomplete = () => {
+        console.log(`Játékos ${cuescoreId} eredményei sikeresen mentve IndexedDB-be`);
+        resolve();
+      };
+
+      transaction.onerror = () => {
+        console.error('Hiba a játékos eredmények mentésekor:', transaction.error);
+        reject(transaction.error);
+      };
+    });
+  }
+
+  // Játékos eredmények lekérése
+  static async getPlayerResults(cuescoreId: number): Promise<PlayerResult[] | null> {
+    if (!this.db) {
+      await this.init();
+    }
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction([STORES.PLAYER_RESULTS], 'readonly');
+      const store = transaction.objectStore(STORES.PLAYER_RESULTS);
+      const request = store.get(cuescoreId);
+
+      request.onsuccess = () => {
+        if (request.result && request.result.results) {
+          resolve(request.result.results);
+        } else {
+          resolve(null);
+        }
+      };
+
+      request.onerror = () => {
+        console.error('Hiba a játékos eredmények lekérésekor:', request.error);
+        reject(request.error);
+      };
+    });
+  }
+
+  // Játékos eredmények frissítésének ellenőrzése
+  static async needsPlayerResultsUpdate(cuescoreId: number): Promise<boolean> {
+    if (!this.db) {
+      await this.init();
+    }
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction([STORES.METADATA], 'readonly');
+      const store = transaction.objectStore(STORES.METADATA);
+      const key = `player_results_${cuescoreId}_last_updated`;
+      const request = store.get(key);
+
+      request.onsuccess = () => {
+        if (!request.result) {
+          resolve(true); // Ha nincs korábbi frissítés, szükséges
+          return;
+        }
+
+        const lastUpdate = new Date(request.result.value);
+        const now = new Date();
+        const diffInHours = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60);
+        
+        resolve(diffInHours >= 12); // 12 óránként frissítünk
+      };
+
+      request.onerror = () => {
+        console.error('Hiba a játékos eredmények metadata lekérésekor:', request.error);
+        reject(request.error);
+      };
+    });
   }
 
   // Cache törlése
@@ -270,14 +377,16 @@ export class IndexedDBService {
     }
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([STORES.COMPETITIONS, STORES.PLAYERS, STORES.METADATA], 'readwrite');
+      const transaction = this.db!.transaction([STORES.COMPETITIONS, STORES.PLAYERS, STORES.PLAYER_RESULTS, STORES.METADATA], 'readwrite');
       
       const competitionsStore = transaction.objectStore(STORES.COMPETITIONS);
       const playersStore = transaction.objectStore(STORES.PLAYERS);
+      const playerResultsStore = transaction.objectStore(STORES.PLAYER_RESULTS);
       const metadataStore = transaction.objectStore(STORES.METADATA);
 
       competitionsStore.clear();
       playersStore.clear();
+      playerResultsStore.clear();
       metadataStore.clear();
 
       transaction.oncomplete = () => {

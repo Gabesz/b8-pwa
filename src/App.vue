@@ -19,7 +19,7 @@
     </header>
 
     <main class="flex-grow-1 container py-3">
-      <router-view />
+      <router-view :key="$route.fullPath" />
     </main>
 
     <nav class="mobile-nav navbar border-top fixed-bottom" style="background-color: #ebddff;">
@@ -32,7 +32,11 @@
           <i class="fas fa-external-link-alt nav-ico"></i>
           <span class="small">biliard8.hu</span>
         </a>
-        <RouterLink class="btn btn-link d-flex flex-column align-items-center nav-item" to="/jatekosok">
+        <RouterLink 
+          class="btn btn-link d-flex flex-column align-items-center nav-item" 
+          :class="{ 'router-link-active': isPlayersActive }"
+          to="/jatekosok"
+        >
           <i class="fas fa-users nav-ico"></i>
           <span class="small">Játékosok</span>
         </RouterLink>
@@ -53,10 +57,18 @@
 import UpdatePrompt from './components/UpdatePrompt.vue';
 import OnlineStatus from './components/OnlineStatus.vue';
 import OfflineFallback from './components/OfflineFallback.vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRoute } from 'vue-router';
+import { computed } from 'vue';
+
+const route = useRoute();
 
 // Dev mode ellenőrzés
 const isDev = import.meta.env.DEV;
+
+// Custom active state for players navigation
+const isPlayersActive = computed(() => {
+  return route.path === '/jatekosok' || route.path.startsWith('/jatekosok/');
+});
 
 function openInfo() {
   alert('Információ hamarosan...');

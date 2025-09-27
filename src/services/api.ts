@@ -23,6 +23,34 @@ export interface PlayersResponse {
   data: Player[];
 }
 
+export interface PlayerResult {
+  cuescoreId: number;
+  uNum: number;
+  datum: string;
+  uName: string;
+  EloMa1: number;
+  EloMa2: number;
+  EloVolt1: number;
+  EloVolt2: number;
+  EloLett1: number;
+  EloLett2: number;
+  Eredm1: number;
+  Eredm2: number;
+  Elvar1: number;
+  Elvar2: number;
+  MeccsTelj1: number;
+  MeccsTelj2: number;
+  VersTelj1: number;
+  VersTelj2: number;
+  EllenfelID: number;
+  EllenfeNev: string;
+  Verseny: string;
+  Link: string;
+  Level1: string;
+  Level2: string;
+  Atlag: number;
+}
+
 // Alapértelmezett adatok - ha nincs cache és nem sikerül online lekérés
 const DEFAULT_COMPETITIONS: Competition[] = [
   {
@@ -249,12 +277,12 @@ export class ApiService {
         await this.setCache(DEFAULT_COMPETITIONS);
       }
       
-      // 24 órás frissítés ellenőrzése
+      // 12 órás frissítés ellenőrzése
       const needsPlayersUpdate = await IndexedDBService.needsUpdate('players');
       const needsCompetitionsUpdate = await IndexedDBService.needsUpdate('competitions');
       
       if (needsPlayersUpdate || needsCompetitionsUpdate) {
-        console.log('24 órás frissítés szükséges, szinkronizálás...');
+        console.log('12 órás frissítés szükséges, szinkronizálás...');
         await this.syncDataInBackground();
       }
     } catch (error) {
@@ -314,6 +342,60 @@ export class ApiService {
     } catch (error) {
       console.error('Játékosok cache lekérése sikertelen:', error);
       return null;
+    }
+  }
+
+  // Játékos eredmények lekérése cache-zel
+  static async getPlayerResults(cuescoreId: number): Promise<PlayerResult[]> {
+    try {
+      // Először ellenőrizzük a cache-t
+      let needsUpdate = true;
+      try {
+        needsUpdate = await IndexedDBService.needsPlayerResultsUpdate(cuescoreId);
+      } catch (cacheCheckError) {
+        console.warn('Cache ellenőrzés sikertelen, API hívás folytatása:', cacheCheckError);
+        needsUpdate = true;
+      }
+      
+      if (!needsUpdate) {
+        console.log('Játékos eredmények betöltése cache-ből:', cuescoreId);
+        const cachedResults = await IndexedDBService.getPlayerResults(cuescoreId);
+        if (cachedResults) {
+          return cachedResults;
+        }
+      }
+
+      // Ha nincs cache vagy frissítés szükséges, API hívás
+      console.log('Játékos eredmények frissítése API-ból:', cuescoreId);
+      const response = await fetch(`${API_CONFIG.BASE_URL}/player/${cuescoreId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      
+      // Cache-be mentés (opcionális, ha sikertelen, nem dobunk hibát)
+      try {
+        await IndexedDBService.savePlayerResults(cuescoreId, data);
+      } catch (cacheSaveError) {
+        console.warn('Cache mentés sikertelen, de folytatjuk:', cacheSaveError);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Játékos eredmények lekérése sikertelen:', error);
+      
+      // Ha online hiba van, próbáljuk meg a cache-ből
+      try {
+        const cachedResults = await IndexedDBService.getPlayerResults(cuescoreId);
+        if (cachedResults) {
+          console.log('Offline mód: játékos eredmények betöltése cache-ből');
+          return cachedResults;
+        }
+      } catch (cacheError) {
+        console.error('Cache lekérése sikertelen:', cacheError);
+      }
+      
+      throw error;
     }
   }
 

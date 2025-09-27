@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-  BASE_URL: 'https://vps.elisnails.hu/pool/public/b8',
+  BASE_URL: 'https://vps.elisnails.hu/pool/b8',
   COMPETITIONS_ENDPOINT: '/competition_groups'
 };
 

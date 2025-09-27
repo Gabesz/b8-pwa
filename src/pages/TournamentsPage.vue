@@ -57,16 +57,15 @@
       </div>
       
       <!-- Nincs több verseny üzenet -->
-      <div 
-        v-if="!hasMoreCompetitions && displayCompetitions.length > 0"
-        class="no-more-competitions"
-      >
-        <p class="text-muted">Minden verseny betöltve ({{ displayCompetitions.length }}/{{ filteredCompetitions.length }})</p>
-      </div>
     </div>
     
-    <div v-else-if="filteredCompetitions.length === 0" class="text-center text-white">
-      <p>Nincsenek elérhető versenyek.</p>
+    <div v-else-if="filteredCompetitions.length === 0" class="no-data">
+      <div class="offline-message">
+        <i class="fas fa-wifi-slash offline-icon"></i>
+        <h3>Internet szükséges</h3>
+        <p>A versenyek listájának megtekintéséhez internetkapcsolat szükséges.</p>
+        <p class="text-muted">Ellenőrizze a hálózati kapcsolatát és próbálja újra.</p>
+      </div>
     </div>
   </div>
 </template>
@@ -293,7 +292,7 @@ onUnmounted(() => {
 
 <style scoped>
 .competitions-list {
-  padding: 0 16px 80px 16px; /* 80px bottom padding a lábléc miatt */
+  padding: 20px 16px 80px 16px; /* 20px top padding a főoldal padding-jéhez igazítva, 80px bottom padding a lábléc miatt */
   overflow-x: hidden;
 }
 
@@ -409,18 +408,38 @@ onUnmounted(() => {
   /* Láthatatlan trigger elem - de kell a magasság az intersection observer számára */
 }
 
-.no-more-competitions {
+.no-data {
   text-align: center;
-  padding: 20px;
-  margin: 20px 0;
+  padding: 40px 20px;
 }
 
-.no-more-competitions p {
-  margin: 0;
-  font-size: 14px;
-  opacity: 0.7;
-  color: #666;
+.offline-message {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 40px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  margin: 0 auto;
 }
+
+.offline-icon {
+  font-size: 48px;
+  color: #ff6b6b;
+  margin-bottom: 20px;
+}
+
+.offline-message h3 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+
+.offline-message p {
+  color: #666;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
 </style>
 
 

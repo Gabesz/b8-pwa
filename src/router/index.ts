@@ -3,6 +3,7 @@ import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-rou
 const routes: RouteRecordRaw[] = [
   { path: '/', name: 'home', component: () => import('../pages/HomePage.vue') },
   { path: '/jatekosok', name: 'players', component: () => import('../pages/PlayersPage.vue') },
+  { path: '/jatekosok/:cuescoreId', name: 'player-details', component: () => import('../pages/PlayerDetailsPage.vue') },
   { path: '/versenyek', name: 'tournaments', component: () => import('../pages/TournamentsPage.vue') }
 ];
 
