@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Icon Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .icon-test { background: white; margin: 10px 0; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .icon-container { display: inline-block; margin: 10px; text-align: center; }
+        .icon-container img { border: 1px solid #ccc; margin: 5px; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>🔍 PWA Icon Test</h1>
+    <p>Ez az oldal teszteli, hogy a PWA ikonok elérhetők-e a szerveren.</p>
+    
+    <div class="icon-test">
+        <h3>Ikon Tesztelés</h3>
+        <div id="icon-results"></div>
+    </div>
+    
+    <div class="icon-test">
+        <h3>Ikon Megjelenítés</h3>
+        <div class="icon-container">
+            <h4>192x192</h4>
+            <img id="icon192" src="/b8app/pwa-192x192.png" alt="192x192 icon" onload="iconLoaded('icon192')" onerror="iconError('icon192')">
+            <div id="status192"></div>
+        </div>
+        
+        <div class="icon-container">
+            <h4>512x512</h4>
+            <img id="icon512" src="/b8app/pwa-512x512.png" alt="512x512 icon" onload="iconLoaded('icon512')" onerror="iconError('icon512')">
+            <div id="status512"></div>
+        </div>
+        
+        <div class="icon-container">
+            <h4>512x512 Maskable</h4>
+            <img id="iconMaskable" src="/b8app/pwa-maskable.png" alt="512x512 maskable icon" onload="iconLoaded('iconMaskable')" onerror="iconError('iconMaskable')">
+            <div id="statusMaskable"></div>
+        </div>
+    </div>
+    
+    <div class="icon-test">
+        <h3>Manifest Teszt</h3>
+        <div id="manifest-results"></div>
+    </div>
+
+    <script>
+        let loadedIcons = 0;
+        let totalIcons = 3;
+        
+        function iconLoaded(iconId) {
+            const status = document.getElementById('status' + iconId.replace('icon', ''));
+            status.innerHTML = '<span class="success">✅ Betöltve</span>';
+            loadedIcons++;
+            checkAllIconsLoaded();
+        }
+        
+        function iconError(iconId) {
+            const status = document.getElementById('status' + iconId.replace('icon', ''));
+            status.innerHTML = '<span class="error">❌ Hiba a betöltésben</span>';
+            checkAllIconsLoaded();
+        }
+        
+        function checkAllIconsLoaded() {
+            if (loadedIcons === totalIcons) {
+                document.getElementById('icon-results').innerHTML = '<span class="success">✅ Minden ikon sikeresen betöltve!</span>';
+            } else if (loadedIcons + (totalIcons - loadedIcons) === totalIcons) {
+                const errorCount = totalIcons - loadedIcons;
+                document.getElementById('icon-results').innerHTML = `<span class="error">❌ ${errorCount} ikon nem töltődött be</span>`;
+            }
+        }
+        
+        // Manifest teszt
+        async function testManifest() {
+            const results = document.getElementById('manifest-results');
+            try {
+                const response = await fetch('/b8app/manifest.webmanifest');
+                if (response.ok) {
+                    const manifest = await response.json();
+                    results.innerHTML = `
+                        <span class="success">✅ Manifest betöltve</span><br>
+                        <span class="info">Név: ${manifest.name}</span><br>
+                        <span class="info">Rövid név: ${manifest.short_name}</span><br>
+                        <span class="info">Ikonok száma: ${manifest.icons ? manifest.icons.length : 0}</span>
+                    `;
+                } else {
+                    results.innerHTML = `<span class="error">❌ Manifest betöltési hiba: ${response.status}</span>`;
+                }
+            } catch (error) {
+                results.innerHTML = `<span class="error">❌ Manifest hiba: ${error.message}</span>`;
+            }
+        }
+        
+        // Automatikus teszt indítása
+        window.onload = function() {
+            testManifest();
+        };
+    </script>
+</body>
+</html>
+

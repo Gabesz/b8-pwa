@@ -24,7 +24,7 @@
 
       <div class="players-list">
         <div 
-          v-for="(player, index) in filteredPlayers" 
+          v-for="(player, index) in displayPlayers" 
           :key="player.uNum"
           class="player-card"
           :class="{ 'animate-in': animatedCards[index] }"
@@ -45,6 +45,34 @@
         </div>
           </div>
         </div>
+        
+        <!-- Loading indicator és trigger -->
+        <div 
+          v-if="isLoadingMore" 
+          class="loading-more"
+        >
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Töltés...</span>
+          </div>
+          <p class="mt-2 text-muted">Játékosok betöltése...</p>
+        </div>
+        
+        <!-- Intersection Observer trigger -->
+        <div 
+          v-if="hasMorePlayers && !isLoadingMore"
+          ref="loadMoreTrigger"
+          class="load-more-trigger"
+        >
+          <!-- Láthatatlan trigger elem -->
+        </div>
+        
+        <!-- Nincs több játékos üzenet -->
+        <div 
+          v-if="!hasMorePlayers && displayPlayers.length > 0"
+          class="no-more-players"
+        >
+          <p class="text-muted">Minden játékos betöltve ({{ displayPlayers.length }}/{{ filteredPlayers.length }})</p>
+        </div>
       </div>
     </div>
 
@@ -55,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { ApiService, type Player, type PlayersResponse } from '../services/api';
 
@@ -65,6 +93,15 @@ const players = ref<Player[]>([]);
 const loading = ref(true);
 const selectedLevel = ref('all');
 const animatedCards = ref<boolean[]>([]);
+
+// Infinity scroll változók
+const visiblePlayers = ref<Player[]>([]);
+const currentChunkIndex = ref(0);
+const chunkSize = ref(20); // Hány kártyát töltünk be egyszerre
+const isLoadingMore = ref(false);
+const hasMorePlayers = ref(true);
+const observer = ref<IntersectionObserver | null>(null);
+const loadMoreTrigger = ref<HTMLElement | null>(null);
 
 const levels = [
   { value: 'all', label: 'Összes' },
@@ -85,6 +122,11 @@ const filteredPlayers = computed(() => {
            (selectedLevel.value === 'félprofi' && (level === 'félprofi' || level === 'felprofi')) ||
            (selectedLevel.value === 'amatőr' && (level === 'amatőr' || level === 'amator'));
   });
+});
+
+// A jelenleg látható játékosok (infinity scroll)
+const displayPlayers = computed(() => {
+  return visiblePlayers.value;
 });
 
 const getPlayerCountByLevel = (level: string): number => {
@@ -109,21 +151,121 @@ const loadPlayers = async () => {
     const response: PlayersResponse = await ApiService.getPlayers();
     players.value = response.data;
     
-    // Animáció beállítása - egymás után animáljuk a kártyákat
-    animatedCards.value = new Array(players.value.length).fill(false);
+    // Reset infinity scroll állapot
+    currentChunkIndex.value = 0;
+    visiblePlayers.value = [];
+    hasMorePlayers.value = true;
     
-    // Animáljuk a kártyákat egymás után
-    players.value.forEach((_, index) => {
-      setTimeout(() => {
-        animatedCards.value[index] = true;
-      }, 100 + (index * 75)); // 100ms kezdeti késleltetés, majd 75ms közöttük
-    });
+    // Első chunk betöltése
+    loadNextChunk();
   } catch (error) {
     console.error('Hiba a játékosok betöltésekor:', error);
   } finally {
     loading.value = false;
   }
 };
+
+// Következő chunk betöltése
+const loadNextChunk = () => {
+  console.log('loadNextChunk called:', {
+    isLoadingMore: isLoadingMore.value,
+    hasMorePlayers: hasMorePlayers.value,
+    currentChunkIndex: currentChunkIndex.value,
+    visibleCount: visiblePlayers.value.length,
+    totalFiltered: filteredPlayers.value.length
+  });
+  
+  if (isLoadingMore.value || !hasMorePlayers.value) {
+    console.log('loadNextChunk blocked:', { isLoadingMore: isLoadingMore.value, hasMorePlayers: hasMorePlayers.value });
+    return;
+  }
+  
+  isLoadingMore.value = true;
+  
+  const startIndex = currentChunkIndex.value * chunkSize.value;
+  const endIndex = startIndex + chunkSize.value;
+  const nextChunk = filteredPlayers.value.slice(startIndex, endIndex);
+  
+  console.log('Loading chunk:', { startIndex, endIndex, chunkSize: chunkSize.value, nextChunkLength: nextChunk.length });
+  
+  if (nextChunk.length === 0) {
+    console.log('No more chunks available');
+    hasMorePlayers.value = false;
+    isLoadingMore.value = false;
+    return;
+  }
+  
+  // Animáció késleltetéssel hozzáadása
+  setTimeout(() => {
+    const currentLength = visiblePlayers.value.length;
+    visiblePlayers.value.push(...nextChunk);
+    
+    console.log('Chunk added:', { newVisibleCount: visiblePlayers.value.length });
+    
+    // Animáció beállítása az új kártyákhoz
+    nextChunk.forEach((_, index) => {
+      setTimeout(() => {
+        const cardIndex = currentLength + index;
+        // Bővítjük az animatedCards tömböt ha szükséges
+        while (animatedCards.value.length <= cardIndex) {
+          animatedCards.value.push(false);
+        }
+        animatedCards.value[cardIndex] = true;
+      }, (index+1) * 75); // 75ms késleltetés kártyánként
+    });
+    
+    currentChunkIndex.value++;
+    isLoadingMore.value = false;
+    
+    // Observer újra beállítása az új trigger elemhez
+    nextTick(() => {
+      setupIntersectionObserver();
+    });
+  }, 100);
+};
+
+// Intersection Observer beállítása
+const setupIntersectionObserver = () => {
+  // Előző observer törlése
+  if (observer.value) {
+    observer.value.disconnect();
+  }
+  
+  observer.value = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        console.log('Intersection Observer triggered:', {
+          isIntersecting: entry.isIntersecting,
+          hasMorePlayers: hasMorePlayers.value,
+          isLoadingMore: isLoadingMore.value,
+          visibleCount: visiblePlayers.value.length,
+          totalFiltered: filteredPlayers.value.length
+        });
+        
+        if (entry.isIntersecting && hasMorePlayers.value && !isLoadingMore.value) {
+          console.log('Loading next chunk from observer');
+          loadNextChunk();
+        }
+      });
+    },
+    {
+      root: null,
+      rootMargin: '300px', // 300px-el korábban trigger - nagyobb margin
+      threshold: 0.1
+    }
+  );
+  
+  // Observer beállítása a trigger elemre
+  nextTick(() => {
+    if (loadMoreTrigger.value && observer.value) {
+      console.log('Setting up observer for trigger element');
+      observer.value.observe(loadMoreTrigger.value);
+    } else {
+      console.log('No trigger element found or no observer');
+    }
+  });
+};
+
 
 // Query paraméter figyelése
 watch(() => route.query.category, (newCategory) => {
@@ -132,20 +274,31 @@ watch(() => route.query.category, (newCategory) => {
   }
 }, { immediate: true });
 
-// Szűrt játékosok változására animáció
+// Szűrt játékosok változására újratöltés
 watch(filteredPlayers, () => {
   if (filteredPlayers.value.length > 0) {
-    // Animáció beállítása - egymás után animáljuk a kártyákat
-    animatedCards.value = new Array(filteredPlayers.value.length).fill(false);
+    // Reset infinity scroll állapot
+    currentChunkIndex.value = 0;
+    visiblePlayers.value = [];
+    hasMorePlayers.value = true;
+    animatedCards.value = [];
     
-    // Animáljuk a kártyákat egymás után
-    filteredPlayers.value.forEach((_, index) => {
-      setTimeout(() => {
-        animatedCards.value[index] = true;
-      }, 100 + (index * 75)); // 100ms kezdeti késleltetés, majd 75ms közöttük
+    // Első chunk betöltése
+    nextTick(() => {
+      loadNextChunk();
+      setupIntersectionObserver(); // Observer beállítása
     });
   }
 }, { immediate: true });
+
+// Observer újra beállítása amikor új trigger elem jelenik meg
+watch(hasMorePlayers, (newValue) => {
+  if (newValue) {
+    nextTick(() => {
+      setupIntersectionObserver();
+    });
+  }
+});
 
 onMounted(() => {
   loadPlayers();
@@ -153,6 +306,12 @@ onMounted(() => {
   // Ha van category query paraméter, állítsuk be a szűrőt
   if (route.query.category && typeof route.query.category === 'string') {
     selectedLevel.value = route.query.category;
+  }
+});
+
+onUnmounted(() => {
+  if (observer.value) {
+    observer.value.disconnect();
   }
 });
 
@@ -206,16 +365,15 @@ onMounted(() => {
   align-items: center;
   gap: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transform: translateX(100vw);
+  transform: translateX(15px);
   opacity: 0;
   transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55), 
               opacity 0.6s ease-out 0.2s;
 }
 
 .player-card.animate-in {
-  transform: translateX(-20px);
+  transform: translateX(0);
   opacity: 1;
-  animation: bounceBack 0.3s ease-out 0.8s forwards;
 }
 
 .player-card:hover {
@@ -224,17 +382,6 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-@keyframes bounceBack {
-  0% {
-    transform: translateX(-20px);
-  }
-  50% {
-    transform: translateX(10px);
-  }
-  100% {
-    transform: translateX(0);
-  }
-}
 
 .player-rank {
   font-size: 18px;
@@ -326,6 +473,35 @@ onMounted(() => {
   text-align: center;
   padding: 40px 20px;
 }
+
+/* Infinity scroll elemek */
+.loading-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.load-more-trigger {
+  height: 20px;
+  width: 100%;
+  /* Láthatatlan trigger elem - de kell a magasság az intersection observer számára */
+}
+
+.no-more-players {
+  text-align: center;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.no-more-players p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.7;
+}
+
 
 /* Mobil optimalizáció */
 @media (max-width: 768px) {

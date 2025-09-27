@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Test - Local</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .test-container { background: white; margin: 10px 0; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .icon-display { display: inline-block; margin: 10px; text-align: center; }
+        .icon-display img { border: 1px solid #ccc; margin: 5px; max-width: 100px; max-height: 100px; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Local Icon Test</h1>
+    <p>Ez az oldal teszteli a PWA ikonokat helyileg.</p>
+    
+    <div class="test-container">
+        <h3>PNG Ikonok Tesztelése</h3>
+        <div class="icon-display">
+            <h4>192x192 PNG</h4>
+            <img src="pwa-192x192.png" alt="192x192 PNG" onload="iconLoaded('png192')" onerror="iconError('png192')">
+            <div id="status-png192"></div>
+        </div>
+        
+        <div class="icon-display">
+            <h4>512x512 PNG</h4>
+            <img src="pwa-512x512.png" alt="512x512 PNG" onload="iconLoaded('png512')" onerror="iconError('png512')">
+            <div id="status-png512"></div>
+        </div>
+        
+        <div class="icon-display">
+            <h4>Maskable PNG</h4>
+            <img src="pwa-maskable.png" alt="Maskable PNG" onload="iconLoaded('pngMaskable')" onerror="iconError('pngMaskable')">
+            <div id="status-pngMaskable"></div>
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h3>SVG Ikonok Tesztelése</h3>
+        <div class="icon-display">
+            <h4>192x192 SVG</h4>
+            <img src="pwa-192x192.svg" alt="192x192 SVG" onload="iconLoaded('svg192')" onerror="iconError('svg192')">
+            <div id="status-svg192"></div>
+        </div>
+        
+        <div class="icon-display">
+            <h4>512x512 SVG</h4>
+            <img src="pwa-512x512.svg" alt="512x512 SVG" onload="iconLoaded('svg512')" onerror="iconError('svg512')">
+            <div id="status-svg512"></div>
+        </div>
+        
+        <div class="icon-display">
+            <h4>Maskable SVG</h4>
+            <img src="pwa-maskable.svg" alt="Maskable SVG" onload="iconLoaded('svgMaskable')" onerror="iconError('svgMaskable')">
+            <div id="status-svgMaskable"></div>
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h3>Fájl Információk</h3>
+        <div id="file-info"></div>
+    </div>
+
+    <script>
+        let loadedIcons = 0;
+        let totalIcons = 6;
+        
+        function iconLoaded(iconId) {
+            const status = document.getElementById('status-' + iconId);
+            status.innerHTML = '<span class="success">✅ Betöltve</span>';
+            loadedIcons++;
+            checkAllIconsLoaded();
+        }
+        
+        function iconError(iconId) {
+            const status = document.getElementById('status-' + iconId);
+            status.innerHTML = '<span class="error">❌ Hiba a betöltésben</span>';
+            checkAllIconsLoaded();
+        }
+        
+        function checkAllIconsLoaded() {
+            if (loadedIcons === totalIcons) {
+                document.getElementById('file-info').innerHTML = '<span class="success">✅ Minden ikon sikeresen betöltve!</span>';
+            } else if (loadedIcons + (totalIcons - loadedIcons) === totalIcons) {
+                const errorCount = totalIcons - loadedIcons;
+                document.getElementById('file-info').innerHTML = `<span class="error">❌ ${errorCount} ikon nem töltődött be</span>`;
+            }
+        }
+        
+        // Fájl méretek ellenőrzése
+        async function checkFileSizes() {
+            const files = [
+                'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable.png',
+                'pwa-192x192.svg', 'pwa-512x512.svg', 'pwa-maskable.svg'
+            ];
+            
+            let info = '<h4>Fájl Méretek:</h4>';
+            for (const file of files) {
+                try {
+                    const response = await fetch(file);
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        info += `<div class="info">${file}: ${blob.size} bytes</div>`;
+                    } else {
+                        info += `<div class="error">${file}: Nem elérhető</div>`;
+                    }
+                } catch (error) {
+                    info += `<div class="error">${file}: Hiba - ${error.message}</div>`;
+                }
+            }
+            
+            document.getElementById('file-info').innerHTML = info;
+        }
+        
+        // Automatikus teszt indítása
+        window.onload = function() {
+            checkFileSizes();
+        };
+    </script>
+</body>
+</html>
+

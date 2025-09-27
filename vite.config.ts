@@ -4,9 +4,6 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   base: '/b8app/',
-  define: {
-    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '0.1.43')
-  },
   plugins: [
     vue(),
     VitePWA({
@@ -142,7 +139,7 @@ export default defineConfig({
           }
         ]
       },
-      includeAssets: ['favicon.svg', 'robots.txt', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable.png', 'offline.html'],
+      includeAssets: ['favicon.svg', 'robots.txt', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable.png', 'pwa-192x192.svg', 'pwa-512x512.svg', 'pwa-maskable.svg', 'offline.html', 'pwa-test.html', 'icon-test.html'],
       manifest: {
         name: 'B8 Pool App',
         short_name: 'B8Pool',
@@ -157,7 +154,18 @@ export default defineConfig({
         categories: ['sports', 'entertainment'],
         id: '/b8app/',
         prefer_related_applications: false,
+        // PWA installability kritériumok
+        display_override: ['window-controls-overlay', 'standalone'],
+        edge_side_panel: {
+          preferred_width: 400
+        },
         icons: [
+          {
+            src: '/b8app/pwa-192x192.svg',
+            sizes: '192x192',
+            type: 'image/svg+xml',
+            purpose: 'any'
+          },
           {
             src: '/b8app/pwa-192x192.png',
             sizes: '192x192',
@@ -165,10 +173,22 @@ export default defineConfig({
             purpose: 'any'
           },
           {
+            src: '/b8app/pwa-512x512.svg',
+            sizes: '512x512',
+            type: 'image/svg+xml',
+            purpose: 'any'
+          },
+          {
             src: '/b8app/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
+          },
+          {
+            src: '/b8app/pwa-maskable.svg',
+            sizes: '512x512',
+            type: 'image/svg+xml',
+            purpose: 'maskable'
           },
           {
             src: '/b8app/pwa-maskable.png',

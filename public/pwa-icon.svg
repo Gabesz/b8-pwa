@@ -1,0 +1,15 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Háttér -->
+  <rect width="512" height="512" rx="64" fill="#bb5175"/>
+  
+  <!-- Pool golyó -->
+  <circle cx="256" cy="256" r="120" fill="white" stroke="#333" stroke-width="8"/>
+  
+  <!-- 8-as szám -->
+  <text x="256" y="280" font-family="Arial, sans-serif" font-size="120" font-weight="bold" text-anchor="middle" fill="#bb5175">8</text>
+  
+  <!-- Pool cue stick -->
+  <line x1="380" y1="180" x2="420" y2="140" stroke="#8B4513" stroke-width="12" stroke-linecap="round"/>
+  <line x1="420" y1="140" x2="460" y2="100" stroke="#654321" stroke-width="8" stroke-linecap="round"/>
+</svg>
+

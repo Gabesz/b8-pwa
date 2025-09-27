@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Version Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .test-container { background: white; margin: 10px 0; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .info { color: blue; }
+        button { background: #bb5175; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #a0445f; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Version Test</h1>
+    <p>Ez az oldal teszteli a verzió ellenőrzési rendszert.</p>
+    
+    <div class="test-container">
+        <h3>Verzió Információk</h3>
+        <div id="version-info"></div>
+    </div>
+    
+    <div class="test-container">
+        <h3>Verzió Tesztelés</h3>
+        <button onclick="testVersionCheck()">Verzió Ellenőrzés</button>
+        <button onclick="simulateUpdate()">Frissítés Szimulálása</button>
+        <button onclick="clearVersionData()">Verzió Adatok Törlése</button>
+        <div id="test-results"></div>
+    </div>
+    
+    <div class="test-container">
+        <h3>LocalStorage Adatok</h3>
+        <div id="storage-info"></div>
+    </div>
+
+    <script>
+        // Verzió ellenőrzési szolgáltatás (egyszerűsített verzió)
+        class VersionService {
+            static VERSION_KEY = 'app-version';
+            static DISMISSED_UPDATE_KEY = 'dismissed-update';
+            
+            static getCurrentVersion() {
+                return '0.1.57'; // Jelenlegi verzió
+            }
+            
+            static getStoredVersion() {
+                return localStorage.getItem(this.VERSION_KEY);
+            }
+            
+            static setStoredVersion(version) {
+                localStorage.setItem(this.VERSION_KEY, version);
+            }
+            
+            static compareVersions(version1, version2) {
+                const v1Parts = version1.split('.').map(Number);
+                const v2Parts = version2.split('.').map(Number);
+                
+                const maxLength = Math.max(v1Parts.length, v2Parts.length);
+                while (v1Parts.length < maxLength) v1Parts.push(0);
+                while (v2Parts.length < maxLength) v2Parts.push(0);
+                
+                for (let i = 0; i < maxLength; i++) {
+                    if (v1Parts[i] > v2Parts[i]) return 1;
+                    if (v1Parts[i] < v2Parts[i]) return -1;
+                }
+                
+                return 0;
+            }
+            
+            static isUpdateNeeded() {
+                const currentVersion = this.getCurrentVersion();
+                const storedVersion = this.getStoredVersion();
+                
+                if (!storedVersion) {
+                    this.setStoredVersion(currentVersion);
+                    return false;
+                }
+                
+                const comparison = this.compareVersions(currentVersion, storedVersion);
+                return comparison > 0;
+            }
+            
+            static setUpdateDismissed(version) {
+                localStorage.setItem(this.DISMISSED_UPDATE_KEY, version);
+            }
+            
+            static isUpdateDismissed() {
+                const currentVersion = this.getCurrentVersion();
+                const dismissedVersion = localStorage.getItem(this.DISMISSED_UPDATE_KEY);
+                return dismissedVersion === currentVersion;
+            }
+            
+            static getVersionInfo() {
+                return {
+                    current: this.getCurrentVersion(),
+                    stored: this.getStoredVersion(),
+                    needsUpdate: this.isUpdateNeeded(),
+                    dismissed: this.isUpdateDismissed()
+                };
+            }
+        }
+        
+        function updateVersionInfo() {
+            const versionInfo = VersionService.getVersionInfo();
+            document.getElementById('version-info').innerHTML = `
+                <div class="info">Jelenlegi verzió: ${versionInfo.current}</div>
+                <div class="info">Tárolt verzió: ${versionInfo.stored || 'Nincs'}</div>
+                <div class="${versionInfo.needsUpdate ? 'success' : 'info'}">Frissítés szükséges: ${versionInfo.needsUpdate ? 'Igen' : 'Nem'}</div>
+                <div class="${versionInfo.dismissed ? 'error' : 'info'}">Elutasítva: ${versionInfo.dismissed ? 'Igen' : 'Nem'}</div>
+            `;
+        }
+        
+        function updateStorageInfo() {
+            const storage = {
+                'app-version': localStorage.getItem('app-version'),
+                'dismissed-update': localStorage.getItem('dismissed-update')
+            };
+            
+            let html = '';
+            for (const [key, value] of Object.entries(storage)) {
+                html += `<div class="info">${key}: ${value || 'Nincs'}</div>`;
+            }
+            document.getElementById('storage-info').innerHTML = html;
+        }
+        
+        function testVersionCheck() {
+            const versionInfo = VersionService.getVersionInfo();
+            const results = document.getElementById('test-results');
+            
+            let html = '<h4>Verzió Ellenőrzés Eredménye:</h4>';
+            html += `<div class="info">Jelenlegi: ${versionInfo.current}</div>`;
+            html += `<div class="info">Tárolt: ${versionInfo.stored || 'Nincs'}</div>`;
+            html += `<div class="${versionInfo.needsUpdate ? 'success' : 'info'}">Frissítés szükséges: ${versionInfo.needsUpdate ? 'Igen' : 'Nem'}</div>`;
+            html += `<div class="${versionInfo.dismissed ? 'error' : 'info'}">Elutasítva: ${versionInfo.dismissed ? 'Igen' : 'Nem'}</div>`;
+            
+            if (versionInfo.needsUpdate && !versionInfo.dismissed) {
+                html += '<div class="success">✅ Frissítés értesítés megjelenne!</div>';
+            } else if (versionInfo.dismissed) {
+                html += '<div class="error">❌ Frissítés elutasítva</div>';
+            } else {
+                html += '<div class="info">ℹ️ Nincs frissítés</div>';
+            }
+            
+            results.innerHTML = html;
+        }
+        
+        function simulateUpdate() {
+            // Régebbi verzió beállítása
+            VersionService.setStoredVersion('0.1.50');
+            updateVersionInfo();
+            updateStorageInfo();
+            testVersionCheck();
+        }
+        
+        function clearVersionData() {
+            localStorage.removeItem('app-version');
+            localStorage.removeItem('dismissed-update');
+            updateVersionInfo();
+            updateStorageInfo();
+            testVersionCheck();
+        }
+        
+        // Automatikus frissítés
+        window.onload = function() {
+            updateVersionInfo();
+            updateStorageInfo();
+        };
+    </script>
+</body>
+</html>
+

@@ -28,7 +28,7 @@
           <i class="fas fa-home nav-ico"></i>
           <span class="small">Főoldal</span>
         </RouterLink>
-        <a class="btn btn-link d-flex flex-column align-items-center nav-item" href="https://biliard8.hu" target="_blank" rel="noopener noreferrer">
+        <a class="btn btn-link d-flex flex-column align-items-center nav-item external-link" href="https://biliard8.hu" target="_blank" rel="noopener noreferrer">
           <i class="fas fa-external-link-alt nav-ico"></i>
           <span class="small">biliard8.hu</span>
         </a>
@@ -74,6 +74,9 @@ main.container { padding-bottom: 72px; }
 .nav-item.router-link-active, .nav-item:hover { 
   color: #bb5175; 
   text-decoration: none !important;
+}
+.nav-item.external-link.router-link-active { 
+  color: #000000 !important; 
 }
 .nav-ico { 
   font-size: 20px; 

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PWA Icon Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .icon-container { display: inline-block; margin: 10px; text-align: center; }
+        canvas { border: 1px solid #ccc; margin: 5px; }
+        button { background: #bb5175; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #a0445f; }
+    </style>
+</head>
+<body>
+    <h1>PWA Icon Generator</h1>
+    <p>Ez az oldal generálja a PWA ikonokat. Kattints a "Generate Icons" gombra, majd töltsd le az ikonokat.</p>
+    
+    <div class="icon-container">
+        <h3>192x192</h3>
+        <canvas id="icon192" width="192" height="192"></canvas>
+        <br>
+        <button onclick="downloadIcon('icon192', 'pwa-192x192.png')">Download 192x192</button>
+    </div>
+    
+    <div class="icon-container">
+        <h3>512x512</h3>
+        <canvas id="icon512" width="512" height="512"></canvas>
+        <br>
+        <button onclick="downloadIcon('icon512', 'pwa-512x512.png')">Download 512x512</button>
+    </div>
+    
+    <div class="icon-container">
+        <h3>512x512 Maskable</h3>
+        <canvas id="iconMaskable" width="512" height="512"></canvas>
+        <br>
+        <button onclick="downloadIcon('iconMaskable', 'pwa-maskable.png')">Download Maskable</button>
+    </div>
+    
+    <div style="margin-top: 20px;">
+        <button onclick="generateAllIcons()">Generate All Icons</button>
+    </div>
+
+    <script>
+        function generateIcon(canvasId, size, isMaskable = false) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Háttér
+            if (isMaskable) {
+                // Maskable ikonoknak teljes háttér kell
+                ctx.fillStyle = '#bb5175';
+                ctx.fillRect(0, 0, size, size);
+            } else {
+                // Normál ikonoknak lekerekített háttér
+                ctx.fillStyle = '#bb5175';
+                ctx.beginPath();
+                const radius = size * 0.2; // 20% lekerekítés
+                ctx.roundRect(0, 0, size, size, radius);
+                ctx.fill();
+            }
+            
+            // Pool golyó
+            const ballSize = size * 0.4;
+            const centerX = size / 2;
+            const centerY = size / 2;
+            
+            // Golyó háttér
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, ballSize, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Golyó szegély
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = size * 0.02;
+            ctx.stroke();
+            
+            // 8-as szám
+            ctx.fillStyle = '#bb5175';
+            ctx.font = `bold ${size * 0.25}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('8', centerX, centerY);
+            
+            // Pool cue stick
+            const stickLength = size * 0.3;
+            const stickX = centerX + ballSize * 0.8;
+            const stickY = centerY - ballSize * 0.3;
+            
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = size * 0.03;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(stickX, stickY);
+            ctx.lineTo(stickX + stickLength, stickY - stickLength * 0.3);
+            ctx.stroke();
+        }
+        
+        function downloadIcon(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        function generateAllIcons() {
+            generateIcon('icon192', 192);
+            generateIcon('icon512', 512);
+            generateIcon('iconMaskable', 512, true);
+        }
+        
+        // Automatikus generálás betöltéskor
+        window.onload = function() {
+            generateAllIcons();
+        };
+    </script>
+</body>
+</html>
+

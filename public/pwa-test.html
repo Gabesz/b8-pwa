@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Installability Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .test-item { background: white; margin: 10px 0; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .warning { color: orange; }
+        button { background: #bb5175; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #a0445f; }
+        .install-button { background: #28a745; }
+        .install-button:hover { background: #218838; }
+    </style>
+</head>
+<body>
+    <h1>🔧 PWA Installability Test</h1>
+    
+    <div class="test-item">
+        <h3>PWA Kritériumok Ellenőrzése</h3>
+        <div id="criteria-results"></div>
+    </div>
+    
+    <div class="test-item">
+        <h3>Manifest Ellenőrzése</h3>
+        <div id="manifest-results"></div>
+    </div>
+    
+    <div class="test-item">
+        <h3>Service Worker Ellenőrzése</h3>
+        <div id="sw-results"></div>
+    </div>
+    
+    <div class="test-item">
+        <h3>Böngésző Támogatás</h3>
+        <div id="browser-results"></div>
+    </div>
+    
+    <div class="test-item">
+        <h3>Telepítési Gomb Teszt</h3>
+        <button id="test-install" class="install-button">Telepítési Gomb Teszt</button>
+        <button id="clear-dismissed">Elutasítás Törlése</button>
+        <div id="install-results"></div>
+    </div>
+    
+    <div class="test-item">
+        <h3>Debug Információ</h3>
+        <div id="debug-info"></div>
+    </div>
+
+    <script>
+        let deferredPrompt = null;
+        
+        // PWA kritériumok ellenőrzése
+        function checkPWACriteria() {
+            const results = document.getElementById('criteria-results');
+            const criteria = {
+                'HTTPS vagy localhost': location.protocol === 'https:' || location.hostname === 'localhost',
+                'Service Worker támogatás': 'serviceWorker' in navigator,
+                'Manifest link': document.querySelector('link[rel="manifest"]') !== null,
+                'Standalone display': !window.matchMedia('(display-mode: standalone)').matches,
+                'iOS standalone': !(navigator.standalone === true)
+            };
+            
+            let html = '';
+            for (const [key, value] of Object.entries(criteria)) {
+                html += `<div class="${value ? 'pass' : 'fail'}">${value ? '✅' : '❌'} ${key}</div>`;
+            }
+            results.innerHTML = html;
+        }
+        
+        // Manifest ellenőrzése
+        async function checkManifest() {
+            const results = document.getElementById('manifest-results');
+            try {
+                const manifestLink = document.querySelector('link[rel="manifest"]');
+                if (!manifestLink) {
+                    results.innerHTML = '<div class="fail">❌ Nincs manifest link</div>';
+                    return;
+                }
+                
+                const response = await fetch(manifestLink.href);
+                const manifest = await response.json();
+                
+                const requiredFields = {
+                    'name': manifest.name,
+                    'short_name': manifest.short_name,
+                    'start_url': manifest.start_url,
+                    'display': manifest.display,
+                    'icons': manifest.icons && manifest.icons.length > 0,
+                    'theme_color': manifest.theme_color,
+                    'background_color': manifest.background_color
+                };
+                
+                let html = '';
+                for (const [key, value] of Object.entries(requiredFields)) {
+                    html += `<div class="${value ? 'pass' : 'fail'}">${value ? '✅' : '❌'} ${key}: ${value || 'Nincs'}</div>`;
+                }
+                
+                // Ikonok ellenőrzése
+                if (manifest.icons) {
+                    html += '<div class="info">📱 Ikonok:</div>';
+                    manifest.icons.forEach(icon => {
+                        html += `<div class="info">  - ${icon.sizes} (${icon.purpose || 'any'})</div>`;
+                    });
+                }
+                
+                results.innerHTML = html;
+            } catch (error) {
+                results.innerHTML = `<div class="fail">❌ Manifest betöltési hiba: ${error.message}</div>`;
+            }
+        }
+        
+        // Service Worker ellenőrzése
+        async function checkServiceWorker() {
+            const results = document.getElementById('sw-results');
+            try {
+                if (!('serviceWorker' in navigator)) {
+                    results.innerHTML = '<div class="fail">❌ Service Worker nem támogatott</div>';
+                    return;
+                }
+                
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (registration) {
+                    results.innerHTML = `
+                        <div class="pass">✅ Service Worker regisztrálva</div>
+                        <div class="info">Scope: ${registration.scope}</div>
+                        <div class="info">Állapot: ${registration.active ? 'Aktív' : 'Inaktív'}</div>
+                    `;
+                } else {
+                    results.innerHTML = '<div class="fail">❌ Service Worker nincs regisztrálva</div>';
+                }
+            } catch (error) {
+                results.innerHTML = `<div class="fail">❌ Service Worker hiba: ${error.message}</div>`;
+            }
+        }
+        
+        // Böngésző támogatás ellenőrzése
+        function checkBrowserSupport() {
+            const results = document.getElementById('browser-results');
+            const userAgent = navigator.userAgent;
+            const isChrome = /Chrome/.test(userAgent) && /Google Inc/.test(navigator.vendor);
+            const isEdge = /Edg/.test(userAgent);
+            const isFirefox = /Firefox/.test(userAgent);
+            const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+            
+            let html = `
+                <div class="info">🌐 Böngésző: ${userAgent}</div>
+                <div class="${isChrome ? 'pass' : 'info'}">${isChrome ? '✅' : 'ℹ️'} Chrome: ${isChrome}</div>
+                <div class="${isEdge ? 'pass' : 'info'}">${isEdge ? '✅' : 'ℹ️'} Edge: ${isEdge}</div>
+                <div class="${isFirefox ? 'pass' : 'info'}">${isFirefox ? '✅' : 'ℹ️'} Firefox: ${isFirefox}</div>
+                <div class="${isSafari ? 'pass' : 'info'}">${isSafari ? '✅' : 'ℹ️'} Safari: ${isSafari}</div>
+            `;
+            
+            results.innerHTML = html;
+        }
+        
+        // Telepítési gomb teszt
+        function testInstallButton() {
+            const results = document.getElementById('install-results');
+            let html = '';
+            
+            if (deferredPrompt) {
+                html += '<div class="pass">✅ Deferred prompt elérhető</div>';
+            } else {
+                html += '<div class="warning">⚠️ Nincs deferred prompt</div>';
+            }
+            
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            const isIOSStandalone = navigator.standalone === true;
+            
+            html += `<div class="${isStandalone ? 'pass' : 'info'}">${isStandalone ? '✅' : 'ℹ️'} Standalone mód: ${isStandalone}</div>`;
+            html += `<div class="${isIOSStandalone ? 'pass' : 'info'}">${isIOSStandalone ? '✅' : 'ℹ️'} iOS Standalone: ${isIOSStandalone}</div>`;
+            
+            const dismissed = localStorage.getItem('pwa-install-dismissed');
+            html += `<div class="info">Elutasítva: ${dismissed === 'true' ? 'Igen' : 'Nem'}</div>`;
+            
+            results.innerHTML = html;
+        }
+        
+        // Debug információk
+        function showDebugInfo() {
+            const results = document.getElementById('debug-info');
+            const debugInfo = {
+                'URL': location.href,
+                'Protokoll': location.protocol,
+                'Hostname': location.hostname,
+                'User Agent': navigator.userAgent,
+                'Online': navigator.onLine,
+                'Standalone': window.matchMedia('(display-mode: standalone)').matches,
+                'iOS Standalone': navigator.standalone === true,
+                'Deferred Prompt': !!deferredPrompt,
+                'Manifest Link': !!document.querySelector('link[rel="manifest"]'),
+                'Service Worker': 'serviceWorker' in navigator
+            };
+            
+            let html = '';
+            for (const [key, value] of Object.entries(debugInfo)) {
+                html += `<div class="info">${key}: ${value}</div>`;
+            }
+            
+            results.innerHTML = html;
+        }
+        
+        // Event listener-ek
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('beforeinstallprompt event fired');
+            deferredPrompt = e;
+            testInstallButton();
+        });
+        
+        window.addEventListener('appinstalled', () => {
+            console.log('appinstalled event fired');
+            testInstallButton();
+        });
+        
+        // Gombok
+        document.getElementById('test-install').addEventListener('click', () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    console.log('User choice:', choiceResult.outcome);
+                    testInstallButton();
+                });
+            } else {
+                alert('Nincs telepítési prompt elérhető. Ellenőrizd a böngésző címsorát!');
+            }
+        });
+        
+        document.getElementById('clear-dismissed').addEventListener('click', () => {
+            localStorage.removeItem('pwa-install-dismissed');
+            alert('Elutasítás törölve!');
+            testInstallButton();
+        });
+        
+        // Inicializálás
+        checkPWACriteria();
+        checkManifest();
+        checkServiceWorker();
+        checkBrowserSupport();
+        testInstallButton();
+        showDebugInfo();
+        
+        // Automatikus frissítés 5 másodpercenként
+        setInterval(() => {
+            testInstallButton();
+        }, 5000);
+    </script>
+</body>
+</html>
+
