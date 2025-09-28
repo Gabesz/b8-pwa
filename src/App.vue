@@ -84,30 +84,13 @@ const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-// Header scroll viselkedés
-const isHeaderVisible = ref(true)
-let lastScrollY = 0
-
-// Egyetlen scroll handler mindkét funkcióhoz
+// Scroll to top gomb scroll handler
 const handleScroll = (event) => {
   // A body elem scroll pozícióját használjuk
   const currentScrollY = document.body.scrollTop || document.documentElement.scrollTop || window.scrollY
   
   // Scroll to top gomb megjelenítése
   showScrollToTop.value = currentScrollY > 300
-  
-  // Header viselkedés
-  if (currentScrollY > 100) {
-    if (isHeaderVisible.value) {
-      isHeaderVisible.value = false
-    }
-  } else {
-    if (!isHeaderVisible.value) {
-      isHeaderVisible.value = true
-    }
-  }
-  
-  lastScrollY = currentScrollY
 }
 
 onMounted(() => {
@@ -314,18 +297,14 @@ main.container { padding-bottom: 72px; }
   font-size: 16px;
 }
 
-/* Header fixed top */
+/* Header statikus */
 header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
+  position: static;
 }
 
-/* Tartalom margin a header miatt */
+/* Tartalom margin eltávolítva - header statikus */
 main.container {
-  margin-top: 40px; /* Header magasság + margin */
+  margin-top: 0;
 }
 
 </style>
