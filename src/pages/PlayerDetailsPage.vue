@@ -45,6 +45,12 @@
         </div>
         
         <div class="chart-container">
+          <!-- Mobil orientáció figyelmeztetés -->
+          <div class="mobile-rotation-hint">
+            <i class="fas fa-mobile-alt"></i>
+            <span>Fordítsd el a kijelzőt a megtekintéshez!</span>
+          </div>
+          
           <div v-if="!playerResults || playerResults.length === 0" class="no-chart-data">
             <p>Nincsenek elérhető adatok a grafikon megjelenítéséhez</p>
           </div>
@@ -1030,6 +1036,33 @@ onUnmounted(() => {
   font-style: italic;
 }
 
+/* Mobil orientáció figyelmeztetés */
+.mobile-rotation-hint {
+  display: none; /* Alapértelmezetten rejtett */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(255, 193, 7, 0.1);
+  border: 2px solid rgba(255, 193, 7, 0.3);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #856404;
+}
+
+.mobile-rotation-hint i {
+  font-size: 32px;
+  margin-bottom: 12px;
+  color: #ffc107;
+}
+
+.mobile-rotation-hint span {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
 .player-results h2 {
   font-size: 18px;
   margin-bottom: 15px;
@@ -1417,6 +1450,11 @@ onUnmounted(() => {
     min-height: 350px;
     max-height: 600px;
     padding: 0;
+  }
+  
+  /* Mobil orientáció figyelmeztetés megjelenítése mobilon */
+  .mobile-rotation-hint {
+    display: flex;
   }
 }
 
