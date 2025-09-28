@@ -165,6 +165,7 @@ const hasMorePlayers = ref(true);
 const observer = ref<IntersectionObserver | null>(null);
 const loadMoreTrigger = ref<HTMLElement | null>(null);
 
+
 const levels = [
   { value: 'profi', label: 'Profi' },
   { value: 'félprofi', label: 'Félprofi' },
@@ -948,4 +949,5 @@ onUnmounted(() => {
     font-size: 12px;
   }
 }
+
 </style>

@@ -5,36 +5,14 @@
       class="single-row-navigation"
       :class="{ 'animate-in': showMenu }"
     >
-      <!-- Fix gomb balra -->
+      <!-- Fix gombok balra -->
       <a @click="navigateToPlayersPage" class="menu-item fixed-item">Játékos ranglista</a>
+      <a href="https://biliard8.hu/" target="_blank" class="menu-item simple-link">Biliard8.hu</a>
+      <a href="https://poolszakag.hu/group" target="_blank" class="menu-item simple-link">CsB</a>
+      <a href="https://poolszakag.hu/fixture" target="_blank" class="menu-item simple-link">
+        <i class="fas fa-calendar-alt"></i>
+      </a>
       
-      <!-- Scrollozható gombok jobbra -->
-      <div 
-        class="scrollable-row"
-        ref="scrollableRow"
-        @mousedown="startDrag"
-        @mousemove="drag"
-        @mouseup="endDrag"
-        @mouseleave="endDrag"
-        @touchstart="startDrag"
-        @touchmove="drag"
-        @touchend="endDrag"
-      >
-        <div 
-          class="scrollable-content"
-          ref="scrollableContent"
-          :style="{ transform: `translateX(${scrollOffset}px)` }"
-        >
-          <a href="https://cuescore.com/" target="_blank" class="menu-item">CueScore.com</a>
-          <a href="https://biliard8.hu/" target="_blank" class="menu-item">Biliard8.hu</a>
-          <a href="https://poolszakag.hu/group" target="_blank" class="menu-item">CsB</a>
-          <a href="https://poolszakag.hu/fixture" target="_blank" class="menu-item">Verseny naptár</a>
-          <a href="#" class="menu-item">LIVE stream-ek</a>
-          <a href="#" class="menu-item">Eredmények</a>
-          <a href="#" class="menu-item">Statisztikák</a>
-          <a href="#" class="menu-item">Hírek</a>
-        </div>
-      </div>
     </div>
 
     <div 
@@ -124,47 +102,6 @@ const profiCount = ref(0)
 const felprofiCount = ref(0)
 const amatorCount = ref(0)
 
-// Drag & drop változók
-const scrollOffset = ref(0)
-const isDragging = ref(false)
-const startX = ref(0)
-const startScrollOffset = ref(0)
-const scrollableRow = ref<HTMLElement>()
-const scrollableContent = ref<HTMLElement>()
-
-const startDrag = (e: MouseEvent | TouchEvent) => {
-  isDragging.value = true
-  const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-  startX.value = clientX
-  startScrollOffset.value = scrollOffset.value
-  
-  // Prevencija a default viselkedés ellen
-  e.preventDefault()
-}
-
-const drag = (e: MouseEvent | TouchEvent) => {
-  if (!isDragging.value) return
-  
-  const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-  const deltaX = clientX - startX.value
-  const newOffset = startScrollOffset.value + deltaX
-  
-  // Számítsuk ki a scrollozható terület szélességét
-  if (scrollableRow.value && scrollableContent.value) {
-    const containerWidth = scrollableRow.value.offsetWidth
-    const contentWidth = scrollableContent.value.scrollWidth
-    const maxScroll = Math.max(0, contentWidth - containerWidth)
-    
-    // Korlátozzuk a scrollozást
-    scrollOffset.value = Math.max(-maxScroll, Math.min(0, newOffset))
-  }
-  
-  e.preventDefault()
-}
-
-const endDrag = () => {
-  isDragging.value = false
-}
 
 // Játékosok adatainak lekérése
 const loadPlayerData = async () => {
@@ -200,6 +137,7 @@ const loadPlayerData = async () => {
   // Animációk indítása azonnal
   startAnimations()
 }
+
 
 // Animációk indítása
 const startAnimations = () => {
@@ -259,26 +197,6 @@ onMounted(() => {
   animation: bounceBack 0.3s ease-out 0.8s forwards;
 }
 
-.scrollable-row {
-  flex: 1;
-  overflow: hidden;
-  cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-}
-
-.scrollable-row:active {
-  cursor: grabbing;
-}
-
-.scrollable-content {
-  display: flex;
-  gap: 12px;
-  transition: transform 0.1s ease-out;
-  will-change: transform;
-}
 
 .menu-item {
   background-color: transparent;
@@ -290,6 +208,13 @@ onMounted(() => {
   font-weight: 500;
   white-space: nowrap;
   flex-shrink: 0;
+  display: inline-block;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+  cursor: pointer;
+  /* Biztosítsuk, hogy a linkek működjenek */
+  pointer-events: auto !important;
 }
 
 .menu-item.fixed-item {
@@ -297,10 +222,27 @@ onMounted(() => {
   color: white;
   transition: background-color 0.2s ease;
   cursor: pointer;
+  border: 2px solid #bb5175;
 }
 
 .menu-item.fixed-item:hover {
   background-color: #a0445f;
+}
+
+.menu-item.simple-link {
+  background-color: transparent;
+  color: #000;
+  text-decoration: none;
+  border: none;
+  padding: 8px 16px;
+  font-weight: 500;
+  transition: none;
+}
+
+.menu-item.simple-link:hover {
+  background-color: transparent;
+  color: #000;
+  text-decoration: none;
 }
 
 .skill-level-box {
@@ -402,6 +344,9 @@ onMounted(() => {
   .menu-item {
     padding: 6px 12px;
     font-size: 12px;
+    z-index: 20;
+    pointer-events: auto;
+    touch-action: manipulation;
   }
   
   .skill-level-box {
@@ -419,6 +364,30 @@ onMounted(() => {
   
   .star-icon {
     font-size: 40px;
+  }
+}
+
+/* Tablet nézetben a nyilak láthatóak */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .scroll-arrow {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .scroll-arrow i {
+    font-size: 10px;
+  }
+}
+
+/* Desktop nézetben a nyilak kisebb méretben */
+@media (min-width: 1200px) {
+  .scroll-arrow {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .scroll-arrow i {
+    font-size: 10px;
   }
 }
 </style>

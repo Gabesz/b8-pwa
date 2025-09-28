@@ -1,6 +1,6 @@
 <template>
   <div class="app-root d-flex flex-column min-vh-100">
-    <header class="navbar bg-white border-bottom sticky-top px-3 py-2">
+    <header class="navbar bg-white border-bottom px-3 py-2">
       <div class="d-flex align-items-center gap-2 flex-grow-1">
         <span class="fw-bold text-primary">Biliard8.hu</span>
         <button
@@ -50,6 +50,15 @@
     <UpdatePrompt />
     <OnlineStatus />
     <OfflineFallback />
+    
+    <!-- Scroll to top gomb -->
+    <button 
+      v-if="showScrollToTop"
+      @click="scrollToTop"
+      class="scroll-to-top-btn"
+    >
+      <i class="fas fa-arrow-up"></i>
+    </button>
   </div>
 </template>
 
@@ -58,12 +67,72 @@ import UpdatePrompt from './components/UpdatePrompt.vue';
 import OnlineStatus from './components/OnlineStatus.vue';
 import OfflineFallback from './components/OfflineFallback.vue';
 import { RouterLink, useRoute } from 'vue-router';
-import { computed } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 
 const route = useRoute();
 
 // Dev mode ellenőrzés
 const isDev = import.meta.env.DEV;
+
+// Scroll to top gomb
+const showScrollToTop = ref(false)
+
+const scrollToTop = () => {
+  // Smooth scroll animáció a tetejére
+  document.body.scrollTo({ top: 0, behavior: 'smooth' })
+  document.documentElement.scrollTo({ top: 0, behavior: 'smooth' })
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// Header scroll viselkedés
+const isHeaderVisible = ref(true)
+let lastScrollY = 0
+
+// Egyetlen scroll handler mindkét funkcióhoz
+const handleScroll = (event) => {
+  // A body elem scroll pozícióját használjuk
+  const currentScrollY = document.body.scrollTop || document.documentElement.scrollTop || window.scrollY
+  
+  // Scroll to top gomb megjelenítése
+  showScrollToTop.value = currentScrollY > 300
+  
+  // Header viselkedés
+  if (currentScrollY > 100) {
+    if (isHeaderVisible.value) {
+      isHeaderVisible.value = false
+    }
+  } else {
+    if (!isHeaderVisible.value) {
+      isHeaderVisible.value = true
+    }
+  }
+  
+  lastScrollY = currentScrollY
+}
+
+onMounted(() => {
+  // Minden lehetséges scroll elemre listener
+  window.addEventListener('scroll', handleScroll)
+  document.addEventListener('scroll', handleScroll)
+  document.documentElement.addEventListener('scroll', handleScroll)
+  document.body.addEventListener('scroll', handleScroll)
+  
+  // Main container scroll
+  const mainContainer = document.querySelector('main.container')
+  if (mainContainer) {
+    mainContainer.addEventListener('scroll', handleScroll)
+  }
+  
+  // Players page scroll
+  const playersPage = document.querySelector('.players-page')
+  if (playersPage) {
+    playersPage.addEventListener('scroll', handleScroll)
+  }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
 
 // Custom active state for players navigation
 const isPlayersActive = computed(() => {
@@ -73,6 +142,124 @@ const isPlayersActive = computed(() => {
 function openInfo() {
   alert('Információ hamarosan...');
 }
+
+function testClick() {
+  console.log('HEADER CLICK TESZT - App.vue működik!')
+  
+  // Teszt header toggle
+  console.log('TESZT HEADER TOGGLE')
+  console.log('isHeaderVisible régi értéke:', isHeaderVisible.value)
+  isHeaderVisible.value = !isHeaderVisible.value
+  console.log('isHeaderVisible új értéke:', isHeaderVisible.value)
+  
+  // DOM teszt
+  const header = document.querySelector('header')
+  if (header) {
+    console.log('Header elem megtalálva')
+    console.log('Header classList:', header.classList.toString())
+    if (isHeaderVisible.value) {
+      header.classList.remove('header-hidden')
+      console.log('header-hidden osztály eltávolítva')
+    } else {
+      header.classList.add('header-hidden')
+      console.log('header-hidden osztály hozzáadva')
+    }
+    console.log('Header classList utána:', header.classList.toString())
+  } else {
+    console.log('Header elem nem található')
+  }
+}
+
+// Scroll event listener hozzáadása
+onMounted(() => {
+  console.log('App.vue mounted - Scroll event listener hozzáadva')
+  
+  // Egyszerűbb scroll logika
+  const simpleScroll = () => {
+    const scrollY = window.scrollY
+    console.log('SCROLL Y:', scrollY)
+    
+    if (scrollY > 100) {
+      if (isHeaderVisible.value) {
+        console.log('Header elrejtése - scroll Y > 100')
+        isHeaderVisible.value = false
+      }
+    } else {
+      if (!isHeaderVisible.value) {
+        console.log('Header megjelenítése - scroll Y < 100')
+        isHeaderVisible.value = true
+      }
+    }
+  }
+  
+  // Különböző scroll event listener-ek
+  window.addEventListener('scroll', simpleScroll)
+  document.addEventListener('scroll', simpleScroll)
+  
+  // Tesztelés - egyszerű scroll esemény
+  const testScroll = () => {
+    console.log('TESZT SCROLL EVENT FUT!')
+  }
+  
+  window.addEventListener('scroll', testScroll)
+  document.addEventListener('scroll', testScroll)
+  
+  // Players list scroll esemény
+  const playersListScroll = () => {
+    console.log('PLAYERS LIST SCROLL EVENT FUT!')
+    
+    // Header viselkedés a players list scroll-ra
+    const playersList = document.querySelector('.players-list')
+    if (playersList) {
+      const scrollTop = playersList.scrollTop
+      console.log('Players list scroll top:', scrollTop)
+      
+      // Egyszerű teszt - minden scroll eseménynél váltogatjuk
+      console.log('Scroll esemény - header toggle')
+      isHeaderVisible.value = !isHeaderVisible.value
+      console.log('isHeaderVisible új értéke:', isHeaderVisible.value)
+      
+      // DOM teszt is
+      const header = document.querySelector('header')
+      if (header) {
+        if (isHeaderVisible.value) {
+          header.classList.remove('header-hidden')
+          console.log('header-hidden osztály eltávolítva')
+        } else {
+          header.classList.add('header-hidden')
+          console.log('header-hidden osztály hozzáadva')
+        }
+      }
+    }
+  }
+  
+  // Egyszerűbb scroll logika - minden scroll eseménynél
+  const simpleScrollTest = () => {
+    console.log('EGYSZERŰ SCROLL TESZT FUT!')
+    isHeaderVisible.value = !isHeaderVisible.value
+    console.log('isHeaderVisible új értéke:', isHeaderVisible.value)
+    
+    const header = document.querySelector('header')
+    if (header) {
+      if (isHeaderVisible.value) {
+        header.classList.remove('header-hidden')
+        console.log('header-hidden osztály eltávolítva')
+      } else {
+        header.classList.add('header-hidden')
+        console.log('header-hidden osztály hozzáadva')
+      }
+    }
+  }
+  
+  // Egyszerű teszt - header click-re váltogatás
+  const testHeaderToggle = () => {
+    console.log('TESZT HEADER TOGGLE')
+    isHeaderVisible.value = !isHeaderVisible.value
+    console.log('isHeaderVisible új értéke:', isHeaderVisible.value)
+  }
+  
+})
+
 </script>
 
 <style scoped>
@@ -94,6 +281,53 @@ main.container { padding-bottom: 72px; }
   font-size: 20px; 
   margin-bottom: 2px; 
 }
+
+/* Scroll to top gomb */
+.scroll-to-top-btn {
+  position: fixed !important;
+  bottom: 60px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  background: #bb5175 !important;
+  color: white !important;
+  border: none !important;
+  cursor: pointer !important;
+  z-index: 9999 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  transition: all 0.3s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.scroll-to-top-btn:hover {
+  background: #a0445f;
+  transform: translateX(-50%) scale(1.1);
+}
+
+.scroll-to-top-btn i {
+  font-size: 16px;
+}
+
+/* Header fixed top */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+/* Tartalom margin a header miatt */
+main.container {
+  margin-top: 40px; /* Header magasság + margin */
+}
+
 </style>
 
 
