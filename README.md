@@ -6,9 +6,13 @@ Egy mobilra optimalizált Vue 3 + TypeScript + Vite + PWA alkalmazás a biliárd
 
 ### 🏠 Főoldal
 - Üdvözlő oldal a navigációval
+- **Scroll to top gomb**: 300px scroll után megjelenik, smooth animációval
+- **Külső linkek**: Biliard8.hu, CsB, Poolszakag.hu naptár
 
 ### 👥 Játékosok
-- Játékosok listázása (fejlesztés alatt)
+- Játékosok listázása szűrőkkel
+- **Scroll to top gomb**: Minden oldalon elérhető
+- **Mobil optimalizált szűrők**: Horizontális scrollozás
 
 ### 🏆 Versenyek
 - **Expandable kártyák**: Kattintásra nyílik/zárul a részletek
@@ -59,6 +63,11 @@ npm run preview
 - **localStorage cache** - Napi cache kezelés
 - **Fallback adatok** - Offline működés
 
+### UX Funkciók
+- **Scroll to top gomb** - 300px scroll threshold, smooth animáció
+- **Statikus header** - Nem rejtődik el scrollozáskor
+- **Mobil optimalizált szűrők** - Horizontális scrollozás
+
 ## Projekt struktúra
 
 ```
@@ -100,8 +109,9 @@ src/
 ## Mobil optimalizáció
 
 ### Layout
-- **Header**: Logó + info ikon
+- **Header**: Logó + info ikon (statikus pozíció)
 - **Bottom Navigation**: 4 menüpont ikonokkal
+- **Scroll to top gomb**: Horizontálisan középen, 60px a tetejétől
 - **Responsive**: Mobil-first design
 
 ### Navigáció
@@ -113,9 +123,11 @@ src/
 ### Stílusok
 - **Háttér**: Képes háttér + overlay
 - **Kártyák**: Fehér, átlátszó, árnyékkal
+- **Scroll to top gomb**: 40x40px, kerek, rózsaszín háttér
 - **Színek**: 
   - Navigáció háttér: `#ebddff`
   - Aktív elem: `#bb5175`
+  - Scroll to top gomb: `#bb5175` (hover: `#a0445f`)
   - Alapértelmezett: fekete
 
 ## Fejlesztési útmutató
@@ -157,6 +169,12 @@ npm run build
 ### Cache törlés
 - localStorage: `competitions_cache_v2`
 - Dátum: `competitions_cache_date_v2`
+
+### Scroll to top gomb
+- **Threshold**: 300px scroll után jelenik meg
+- **Pozíció**: Horizontálisan középen, 60px a tetejétől
+- **Animáció**: Smooth scroll a tetejére
+- **Méret**: 40x40px, 16px ikon
 
 ## Jövőbeli fejlesztések
 
