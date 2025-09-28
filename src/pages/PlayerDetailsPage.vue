@@ -77,7 +77,7 @@
             <!-- Verseny fejléc -->
             <div 
               class="competition-header"
-              @click="toggleCompetition(competition.name)"
+              @click="toggleCompetition(competition.name + '_' + competition.matches[0].datum)"
             >
               <div class="competition-info">
                 <div class="competition-name">{{ competition.name }}</div>
@@ -87,14 +87,14 @@
               <div class="competition-chevron">
                 <i 
                   class="fas fa-chevron-down" 
-                  :class="{ 'rotated': isCompetitionExpanded(competition.name) }"
+                  :class="{ 'rotated': isCompetitionExpanded(competition.name + '_' + competition.matches[0].datum) }"
                 ></i>
               </div>
             </div>
             
             <!-- Mérkőzések listája (kibontott állapotban) -->
             <div 
-              v-if="isCompetitionExpanded(competition.name)"
+              v-if="isCompetitionExpanded(competition.name + '_' + competition.matches[0].datum)"
               class="matches-list"
             >
               <div 
@@ -267,12 +267,14 @@ const competitionsGrouped = computed(() => {
   const groups = new Map();
   
   playerResults.value.forEach(result => {
-    const competitionKey = result.Verseny || result.datum;
+    // Kompozit kulcs: verseny név + dátum
+    const competitionName = result.Verseny || 'Verseny';
     const dateKey = formatDate(result.datum);
+    const competitionKey = `${competitionName}_${result.datum}`;
     
     if (!groups.has(competitionKey)) {
       groups.set(competitionKey, {
-        name: result.Verseny || 'Verseny',
+        name: competitionName,
         date: dateKey,
         matches: []
       });
@@ -755,7 +757,7 @@ watch(competitionsGrouped, (newCompetitions) => {
     
     // Első verseny automatikusan kinyitása
     if (newCompetitions[0]) {
-      expandedCompetitions.value.add(newCompetitions[0].name);
+      expandedCompetitions.value.add(newCompetitions[0].name + '_' + newCompetitions[0].matches[0].datum);
     }
     
     // Első chunk betöltése

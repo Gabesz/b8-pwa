@@ -886,13 +886,29 @@ onUnmounted(() => {
   }
   
   .filter-row {
-    gap: 8px; /* Kisebb gap mobilon hogy elférjen a 4 elem */
+    gap: 6px; /* Még kisebb gap mobilon */
+    flex-wrap: nowrap; /* Ne törjön sor */
+    overflow-x: auto; /* Horizontális scroll ha szükséges */
+    padding-bottom: 4px; /* Scrollbar helye */
   }
   
   .filter-btn {
-    padding: 8px 12px; /* Kisebb padding mobilon */
-    min-width: 80px; /* Kisebb minimum szélesség */
-    flex: none; /* Mobilon ne töltse ki a teljes helyet */
+    padding: 6px 8px; /* Még kisebb padding mobilon */
+    min-width: 70px; /* Még kisebb minimum szélesség */
+    flex: 0 0 auto; /* Ne nyúljon, de ne zsugorodjon */
+    font-size: 12px; /* Kisebb betűméret */
+  }
+  
+  .filter-btn-content {
+    gap: 2px; /* Kisebb gap a gomb tartalmában */
+  }
+  
+  .filter-btn-title {
+    font-size: 12px; /* Kisebb cím betűméret */
+  }
+  
+  .filter-btn-count {
+    font-size: 10px; /* Kisebb szám betűméret */
   }
   
   .search-input-wrapper {

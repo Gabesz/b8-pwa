@@ -202,11 +202,11 @@ export class ApiService {
         return data;
       }
     } catch (error) {
-      // Offline mód - használjuk az offline adatokat
+      // Offline mód - nincs internet
     }
 
-    // Ha nincs cache és nincs internet, offline adatokat adunk vissza
-    return DEFAULT_COMPETITIONS;
+    // Ha nincs cache és nincs internet, üres tömböt adunk vissza
+    return [];
   }
 
   // Cache törlés függvény
@@ -266,17 +266,6 @@ export class ApiService {
       // IndexedDB inicializálása
       await IndexedDBService.init();
       
-      // Ha nincs cache, inicializáljuk offline adatokkal
-      const playersCache = await this.getPlayersCache();
-      if (!playersCache) {
-        await this.setPlayersCache(OFFLINE_PLAYERS_DATA);
-      }
-      
-      const competitionsCache = await this.getCache();
-      if (!competitionsCache) {
-        await this.setCache(DEFAULT_COMPETITIONS);
-      }
-      
       // 12 órás frissítés ellenőrzése
       const needsPlayersUpdate = await IndexedDBService.needsUpdate('players');
       const needsCompetitionsUpdate = await IndexedDBService.needsUpdate('competitions');
@@ -319,12 +308,12 @@ export class ApiService {
         return data;
       }
     } catch (error) {
-      // Offline mód vagy timeout - használjuk az offline adatokat
-      console.log('Offline mód vagy API hiba, offline adatok használata');
+      // Offline mód vagy timeout - nincs internet
+      console.log('Offline mód vagy API hiba');
     }
 
-    // Ha nincs cache és nincs internet, offline adatokat adunk vissza
-    return OFFLINE_PLAYERS_DATA;
+    // Ha nincs cache és nincs internet, üres adatokat adunk vissza
+    return { time: "", data: [] };
   }
 
   private static async setPlayersCache(data: PlayersResponse): Promise<void> {
