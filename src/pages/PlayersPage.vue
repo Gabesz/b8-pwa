@@ -513,10 +513,12 @@ onUnmounted(() => {
   scrollbar-color: transparent transparent;
 }
 
-/* Mobile nézetben eltávolítjuk a gutter-t a container változatokból */
+/* Mobile nézetben eltávolítjuk a gutter-t a container-ből - globális Bootstrap override */
 @media (max-width: 768px) {
-  .container-md, .container-sm, .container-xl, .container-xxl {
+  .container, .container-fluid, .container-lg, .container-md, .container-sm, .container-xl, .container-xxl {
     --bs-gutter-x: 0 !important;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
   }
 }
 
