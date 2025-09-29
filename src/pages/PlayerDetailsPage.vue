@@ -211,8 +211,7 @@ ChartJS.register(
   Legend,
   Filler,
   LineController,
-  BarController,
-  annotationPlugin
+  BarController
 );
 
 const route = useRoute();
@@ -543,6 +542,12 @@ const getChartConfig = (type: string) => {
 
 // Chart létrehozása
 const createChart = (type: string) => {
+  // Ellenőrizzük hogy a komponens még mounted-e
+  if (!lineChart.value && !barChart.value && !areaChart.value && !scatterChart.value) {
+    console.log('Chart canvas refs not available yet');
+    return;
+  }
+
   const canvasRef = type === 'line' ? lineChart.value :
                    type === 'bar' ? barChart.value :
                    type === 'area' ? areaChart.value :
@@ -568,6 +573,12 @@ const createChart = (type: string) => {
   }
 
   try {
+    // Ellenőrizzük hogy a komponens még aktív-e
+    if (!canvasRef.isConnected) {
+      console.log('Canvas not connected to DOM');
+      return;
+    }
+
     // Valódi ELO adatok használata
     const data = chartData.value;
     console.log('Chart data for', type, ':', data);
@@ -585,8 +596,15 @@ const createChart = (type: string) => {
       return;
     }
 
-    chartInstances[type] = new ChartJS(canvasRef, config);
-    console.log(`Chart created successfully for type: ${type} with ${data.labels.length} data points`);
+    // Chart létrehozása nextTick-ben a Vue lifecycle biztonságáért
+    nextTick(() => {
+      try {
+        chartInstances[type] = new ChartJS(canvasRef, config);
+        console.log(`Chart created successfully for type: ${type} with ${data.labels.length} data points`);
+      } catch (chartError) {
+        console.error(`Chart creation failed for type ${type}:`, chartError);
+      }
+    });
   } catch (error) {
     console.error(`Error creating chart for type ${type}:`, error);
   }
@@ -704,6 +722,11 @@ watch(hasMoreResults, () => {
 // Watcher a selectedChart változására
 watch(selectedChart, (newChart) => {
   console.log('Selected chart changed to:', newChart);
+  // Ellenőrizzük hogy a komponens még aktív-e
+  if (!lineChart.value && !barChart.value && !areaChart.value && !scatterChart.value) {
+    console.log('Component unmounted, skipping chart creation');
+    return;
+  }
   nextTick(() => {
     setTimeout(() => {
       createChart(newChart);
@@ -714,6 +737,11 @@ watch(selectedChart, (newChart) => {
 // Watcher a chartData változására
 watch(chartData, (newData) => {
   console.log('Chart data changed:', newData);
+  // Ellenőrizzük hogy a komponens még aktív-e
+  if (!lineChart.value && !barChart.value && !areaChart.value && !scatterChart.value) {
+    console.log('Component unmounted, skipping chart creation');
+    return;
+  }
   if (newData && newData.labels.length > 0) {
     nextTick(() => {
       setTimeout(() => {
