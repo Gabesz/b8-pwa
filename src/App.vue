@@ -34,14 +34,14 @@
     </main>
 
     <nav class="mobile-nav navbar border-top fixed-bottom" style="background-color: #ebddff;">
-      <div class="container d-flex justify-content-between px-3 py-1">
+      <div class="container d-flex justify-content-between px-2 py-1">
         <RouterLink class="btn btn-link d-flex flex-column align-items-center nav-item" to="/">
           <i class="fas fa-home nav-ico"></i>
-          <span class="small">Főoldal</span>
+          <span class="small nav-text">Főoldal</span>
         </RouterLink>
         <a class="btn btn-link d-flex flex-column align-items-center nav-item external-link" href="https://biliard8.hu" target="_blank" rel="noopener noreferrer">
           <i class="fas fa-external-link-alt nav-ico"></i>
-          <span class="small">biliard8.hu</span>
+          <span class="small nav-text">biliard8.hu</span>
         </a>
         <RouterLink 
           class="btn btn-link d-flex flex-column align-items-center nav-item" 
@@ -49,11 +49,11 @@
           to="/jatekosok"
         >
           <i class="fas fa-users nav-ico"></i>
-          <span class="small">Játékosok</span>
+          <span class="small nav-text">Játékosok</span>
         </RouterLink>
         <RouterLink class="btn btn-link d-flex flex-column align-items-center nav-item" to="/versenyek">
           <i class="fas fa-calendar-alt nav-ico"></i>
-          <span class="small">Versenyek</span>
+          <span class="small nav-text">Versenyek</span>
         </RouterLink>
       </div>
     </nav>
@@ -272,8 +272,8 @@ onMounted(() => {
 
 <style scoped>
 .app-root { background: transparent; }
-.mobile-nav { height: 56px; }
-main.container { padding-bottom: 72px; }
+.mobile-nav { height: 48px; }
+main.container { padding-bottom: 64px; }
 .nav-item { 
   color: #000000; 
   text-decoration: none !important;
@@ -286,8 +286,13 @@ main.container { padding-bottom: 72px; }
   color: #000000 !important; 
 }
 .nav-ico { 
-  font-size: 20px; 
-  margin-bottom: 2px; 
+  font-size: 17px; 
+  margin-bottom: 1px; 
+}
+
+.nav-text {
+  font-size: 11px;
+  line-height: 1.2;
 }
 
 /* Scroll to top gomb */
