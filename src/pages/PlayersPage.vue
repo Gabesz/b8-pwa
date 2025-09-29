@@ -513,6 +513,14 @@ onUnmounted(() => {
   scrollbar-color: transparent transparent;
 }
 
+/* Mobile nézetben eltávolítjuk a gutter-t a container változatokból */
+@media (max-width: 768px) {
+  .container-md, .container-sm, .container-xl, .container-xxl {
+    --bs-gutter-x: 0 !important;
+  }
+}
+
+
 /* Webkit scrollbar finom elrejtése */
 .players-page::-webkit-scrollbar {
   width: 0px;
