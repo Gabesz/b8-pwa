@@ -348,7 +348,8 @@ const getPlayerLevelClass = (level: string): string => {
 
 // Chart adatok előkészítése
 const chartData = computed(() => {
-  console.log('Computing chart data, playerResults length:', playerResults.value?.length);
+  console.log('Computing chart data, playerResults:', playerResults.value);
+  console.log('PlayerResults length:', playerResults.value?.length);
   
   if (!playerResults.value || playerResults.value.length === 0) {
     console.log('No player results available for chart');
@@ -469,64 +470,19 @@ const getChartConfig = (type: string) => {
       },
       scales: {
         x: {
-          type: 'category',
           display: true,
           title: {
             display: true,
-            text: 'Versenyek',
-            font: {
-              weight: 'bold',
-              size: 14
-            },
-            padding: {
-              top: 15
-            }
-          },
-          ticks: {
-            display: true,
-            font: {
-              size: 12,
-              weight: 'normal'
-            },
-            maxTicksLimit: 20,
-            padding: 5
-          },
-          grid: {
-            display: true,
-            color: 'rgba(0, 0, 0, 0.1)',
-            drawBorder: true,
-            borderColor: 'rgba(0, 0, 0, 0.2)'
+            text: 'Versenyek'
           }
         },
         y: {
-          type: 'linear' as const,
           display: true,
-          position: 'left' as const,
           title: {
             display: true,
-            text: 'Élő-pontszám',
-            font: {
-              weight: 'bold',
-              size: 14
-            },
-            padding: {
-              bottom: 10
-            }
+            text: 'Élő-pontszám'
           },
-          beginAtZero: false,
-          ticks: {
-            display: true,
-            font: {
-              size: 12
-            },
-            padding: 8
-          },
-          grid: {
-            display: true,
-            color: 'rgba(0, 0, 0, 0.1)',
-            drawBorder: true,
-            borderColor: 'rgba(0, 0, 0, 0.2)'
-          }
+          beginAtZero: false
         },
         annotation: {
           annotations: {
@@ -658,13 +614,21 @@ const createChart = (type: string) => {
   try {
     // Valódi ELO adatok használata
     const data = chartData.value;
+    console.log('Chart data for', type, ':', data);
     
-    if (!data || data.labels.length === 0) {
+    if (!data || !data.labels || data.labels.length === 0) {
       console.log('No chart data available');
       return;
     }
 
     const config = getChartConfig(type);
+    console.log('Chart config for', type, ':', config);
+    
+    if (!config || !config.data) {
+      console.log('Invalid chart config');
+      return;
+    }
+
     chartInstances[type] = new ChartJS(canvasRef, config);
     console.log(`Chart created successfully for type: ${type} with ${data.labels.length} data points`);
   } catch (error) {
