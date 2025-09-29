@@ -527,9 +527,7 @@ const getChartConfig = (type: string) => {
             drawBorder: true,
             borderColor: 'rgba(0, 0, 0, 0.2)'
           }
-        }
-      },
-      plugins: {
+        },
         annotation: {
           annotations: {
             profiLine: {
