@@ -24,7 +24,8 @@
           :class="{ 'online': isOnline, 'offline': !isOnline }"
           :title="isOnline ? 'Online' : 'Offline'"
         >
-          {{ isOnline ? 'Online' : 'Offline' }}
+          <i :class="isOnline ? 'fas fa-wifi' : 'fas fa-times'"></i>
+          <span>{{ isOnline ? 'Online' : 'Offline' }}</span>
         </div>
         <span class="version-text">v{{ version }}</span>
       </div>
@@ -347,6 +348,7 @@ main.container {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
@@ -365,7 +367,9 @@ main.container {
   color: white;
 }
 
-/* Ikon stílusok eltávolítva - csak szöveg */
+.status-indicator i {
+  font-size: 10px;
+}
 
 .version-text {
   font-size: 12px;
