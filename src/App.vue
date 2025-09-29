@@ -24,7 +24,7 @@
           :class="{ 'online': isOnline, 'offline': !isOnline }"
           :title="isOnline ? 'Online' : 'Offline'"
         >
-          <i :class="isOnline ? 'fas fa-wifi' : 'fas fa-ban'"></i>
+          {{ isOnline ? 'Online' : 'Offline' }}
         </div>
         <span class="version-text">v{{ version }}</span>
       </div>
@@ -60,7 +60,6 @@
     </nav>
 
     <UpdatePrompt />
-    <OnlineStatus />
     <OfflineFallback />
     
     <!-- Scroll to top gomb -->
@@ -76,7 +75,6 @@
 
 <script setup lang="ts">
 import UpdatePrompt from './components/UpdatePrompt.vue';
-import OnlineStatus from './components/OnlineStatus.vue';
 import OfflineFallback from './components/OfflineFallback.vue';
 import { RouterLink, useRoute } from 'vue-router';
 import { computed, ref, onMounted, onUnmounted } from 'vue';
@@ -88,6 +86,7 @@ const isDev = import.meta.env.DEV;
 
 // Online/Offline status
 const isOnline = ref(navigator.onLine);
+console.log('Initial online status:', navigator.onLine);
 
 // Verzió szám
 const version = ref('0.1.79');
@@ -132,10 +131,12 @@ onMounted(() => {
   
   // Online/Offline event listeners
   window.addEventListener('online', () => {
+    console.log('Online event triggered');
     isOnline.value = true;
   });
   
   window.addEventListener('offline', () => {
+    console.log('Offline event triggered');
     isOnline.value = false;
   });
 })
@@ -346,11 +347,12 @@ main.container {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
   transition: all 0.3s ease;
+  white-space: nowrap;
 }
 
 .status-indicator.online {
@@ -363,9 +365,7 @@ main.container {
   color: white;
 }
 
-.status-indicator i {
-  font-size: 14px;
-}
+/* Ikon stílusok eltávolítva - csak szöveg */
 
 .version-text {
   font-size: 12px;
