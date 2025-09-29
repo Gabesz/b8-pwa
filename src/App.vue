@@ -17,8 +17,8 @@
         </button>
       </div>
       
-      <!-- Online/Offline status indicator -->
-      <div class="d-flex align-items-center">
+      <!-- Online/Offline status indicator és verzió -->
+      <div class="d-flex align-items-center gap-2">
         <div 
           class="status-indicator"
           :class="{ 'online': isOnline, 'offline': !isOnline }"
@@ -26,6 +26,7 @@
         >
           <i :class="isOnline ? 'fas fa-wifi' : 'fas fa-wifi-slash'"></i>
         </div>
+        <span class="version-text">v{{ version }}</span>
       </div>
     </header>
 
@@ -87,6 +88,9 @@ const isDev = import.meta.env.DEV;
 
 // Online/Offline status
 const isOnline = ref(navigator.onLine);
+
+// Verzió szám
+const version = ref('0.1.79');
 
 // Scroll to top gomb
 const showScrollToTop = ref(false)
@@ -361,6 +365,13 @@ main.container {
 
 .status-indicator i {
   font-size: 14px;
+}
+
+.version-text {
+  font-size: 12px;
+  color: #6c757d;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 </style>
