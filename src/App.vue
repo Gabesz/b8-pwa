@@ -24,7 +24,7 @@
           :class="{ 'online': isOnline, 'offline': !isOnline }"
           :title="isOnline ? 'Online' : 'Offline'"
         >
-          <i :class="isOnline ? 'fas fa-wifi' : 'fas fa-wifi-slash'"></i>
+          <i :class="isOnline ? 'fas fa-wifi' : 'fas fa-ban'"></i>
         </div>
         <span class="version-text">v{{ version }}</span>
       </div>
