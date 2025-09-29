@@ -197,7 +197,7 @@ import {
   LineController,
   BarController
 } from 'chart.js';
-import annotationPlugin from 'chartjs-plugin-annotation';
+// annotationPlugin eltávolítva - hibát okozott
 
 // Chart.js regisztrálása - minden szükséges komponens
 ChartJS.register(
@@ -483,50 +483,6 @@ const getChartConfig = (type: string) => {
             text: 'Élő-pontszám'
           },
           beginAtZero: false
-        },
-        annotation: {
-          annotations: {
-            profiLine: {
-              type: 'line',
-              yMin: 575,
-              yMax: 575,
-              borderColor: '#28a745',
-              borderWidth: 2,
-              borderDash: [5, 5],
-              label: {
-                content: 'Profi határvonal',
-                enabled: true,
-                position: 'start',
-                backgroundColor: '#28a745',
-                color: 'white',
-                font: {
-                  size: 12,
-                  weight: 'bold'
-                },
-                padding: 4
-              }
-            },
-            felprofiLine: {
-              type: 'line',
-              yMin: 475,
-              yMax: 475,
-              borderColor: '#ccbb25',
-              borderWidth: 2,
-              borderDash: [5, 5],
-              label: {
-                content: 'Félprofi határvonal',
-                enabled: true,
-                position: 'start',
-                backgroundColor: '#ccbb25',
-                color: 'white',
-                font: {
-                  size: 12,
-                  weight: 'bold'
-                },
-                padding: 4
-              }
-            }
-          }
         }
       }
     }
