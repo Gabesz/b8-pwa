@@ -54,7 +54,15 @@ self.addEventListener('fetch', (event) => {
       // Assets fájlok kezelése (JS, CSS)
       url.pathname.includes('/assets/') ||
       url.pathname.endsWith('.js') ||
-      url.pathname.endsWith('.css')) {
+      url.pathname.endsWith('.css') ||
+      // Favicon és egyéb statikus fájlok
+      url.pathname.endsWith('.svg') ||
+      url.pathname.endsWith('.ico') ||
+      url.pathname.endsWith('.png') ||
+      url.pathname.endsWith('.jpg') ||
+      url.pathname.endsWith('.jpeg') ||
+      url.pathname.endsWith('.gif') ||
+      url.pathname.endsWith('.webp')) {
     
     event.respondWith(
       caches.match(event.request).then(response => {
@@ -83,6 +91,19 @@ self.addEventListener('fetch', (event) => {
           // Ha a hálózat sem elérhető, próbáljuk meg az index.html-t cache-ből
           console.log('Offline mód - index.html betöltése cache-ből');
           const basePath = getBasePath();
+          
+          // Ha favicon kérés, adjunk vissza egy egyszerű SVG-t
+          if (url.pathname.endsWith('.svg') || url.pathname.endsWith('.ico')) {
+            console.log('Favicon kérés offline módban');
+            return new Response(`
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+                <rect width="32" height="32" fill="#bb5175"/>
+                <text x="16" y="20" text-anchor="middle" fill="white" font-family="Arial" font-size="16" font-weight="bold">B8</text>
+              </svg>
+            `, {
+              headers: { 'Content-Type': 'image/svg+xml' }
+            });
+          }
           
           return caches.match(basePath + '/index.html').then(indexResponse => {
             if (indexResponse) {
@@ -151,6 +172,7 @@ self.addEventListener('install', (event) => {
         basePath + '/',
         basePath + '/index.html',
         basePath + '/offline.html',
+        basePath + '/favicon.svg',
         basePath + '/pwa-192x192.png',
         basePath + '/pwa-512x512.png',
         basePath + '/manifest.webmanifest'
