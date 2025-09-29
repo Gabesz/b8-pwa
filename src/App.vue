@@ -16,6 +16,17 @@
           </svg>
         </button>
       </div>
+      
+      <!-- Online/Offline status indicator -->
+      <div class="d-flex align-items-center">
+        <div 
+          class="status-indicator"
+          :class="{ 'online': isOnline, 'offline': !isOnline }"
+          :title="isOnline ? 'Online' : 'Offline'"
+        >
+          <i :class="isOnline ? 'fas fa-wifi' : 'fas fa-wifi-slash'"></i>
+        </div>
+      </div>
     </header>
 
     <main class="flex-grow-1 container py-3">
@@ -74,6 +85,9 @@ const route = useRoute();
 // Dev mode ellenőrzés
 const isDev = import.meta.env.DEV;
 
+// Online/Offline status
+const isOnline = ref(navigator.onLine);
+
 // Scroll to top gomb
 const showScrollToTop = ref(false)
 
@@ -111,10 +125,21 @@ onMounted(() => {
   if (playersPage) {
     playersPage.addEventListener('scroll', handleScroll)
   }
+  
+  // Online/Offline event listeners
+  window.addEventListener('online', () => {
+    isOnline.value = true;
+  });
+  
+  window.addEventListener('offline', () => {
+    isOnline.value = false;
+  });
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('online', () => {});
+  window.removeEventListener('offline', () => {});
 })
 
 // Custom active state for players navigation
@@ -305,6 +330,32 @@ header {
 /* Tartalom margin eltávolítva - header statikus */
 main.container {
   margin-top: 0;
+}
+
+/* Online/Offline status indicator */
+.status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.status-indicator.online {
+  background: #28a745;
+  color: white;
+}
+
+.status-indicator.offline {
+  background: #dc3545;
+  color: white;
+}
+
+.status-indicator i {
+  font-size: 14px;
 }
 
 </style>
